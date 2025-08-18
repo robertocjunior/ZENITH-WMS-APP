@@ -1,5 +1,5 @@
 // screens/LoginScreen.js
-import React, { useState, useCallback } from 'react'; // Adicione useCallback
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -17,31 +17,29 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
-import { useFocusEffect } from '@react-navigation/native'; // <-- 1. Importe o useFocusEffect
-import * as NavigationBar from 'expo-navigation-bar';      // <-- 2. Importe a biblioteca
+import { useFocusEffect } from '@react-navigation/native';
+import * as NavigationBar from 'expo-navigation-bar';
+import { Ionicons } from '@expo/vector-icons'; // <-- Importe o Ionicons
 
 const LoginScreen = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    // --- 1. NOVO ESTADO PARA VISIBILIDADE DA SENHA ---
+    const [isPasswordVisible, setPasswordVisible] = useState(false);
     const { login } = useAuth();
 
-    // --- 3. ADICIONE ESTE BLOCO ---
-    // Este hook será executado toda vez que a tela de login entrar em foco
     useFocusEffect(
         useCallback(() => {
             const setNavBarColor = async () => {
                 if (Platform.OS === 'android') {
-                    // Define a cor da barra de navegação para o azul primário
                     await NavigationBar.setBackgroundColorAsync(COLORS.primary);
-                    // Garante que os botões da barra (home, back) fiquem claros
                     await NavigationBar.setButtonStyleAsync('light');
                 }
             };
             setNavBarColor();
         }, [])
     );
-    // ----------------------------
 
     const handleLogin = async () => {
         if (!username || !password) {
@@ -71,7 +69,7 @@ const LoginScreen = () => {
                             <Image source={require('../assets/icons/name-transparent.png')} style={styles.logoName} />
                         </View>
                         <Text style={styles.subtitle}>Faça login com seu usuário e senha do Sankhya.</Text>
-                        
+
                         <Text style={styles.label}>Usuário</Text>
                         <TextInput
                             style={styles.input}
@@ -80,15 +78,29 @@ const LoginScreen = () => {
                             autoCapitalize="none"
                             autoCompleteType="username"
                         />
-                        
+
                         <Text style={styles.label}>Senha</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                            autoCompleteType="password"
-                        />
+                        {/* --- 2. NOVA ESTRUTURA PARA O CAMPO DE SENHA --- */}
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                style={styles.passwordInput}
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={!isPasswordVisible} // Controlado pelo estado
+                                autoCapitalize="none"
+                                autoCompleteType="password"
+                            />
+                            <TouchableOpacity
+                                style={styles.eyeIcon}
+                                onPress={() => setPasswordVisible(!isPasswordVisible)} // Ação de clique
+                            >
+                                <Ionicons
+                                    name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                                    size={24}
+                                    color={COLORS.textLight}
+                                />
+                            </TouchableOpacity>
+                        </View>
                         
                         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
                             {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
@@ -100,7 +112,6 @@ const LoginScreen = () => {
     );
 };
 
-// ... (seus estilos permanecem os mesmos)
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -153,6 +164,25 @@ const styles = StyleSheet.create({
         borderColor: COLORS.border,
         marginBottom: 20,
     },
+    // --- 3. NOVOS ESTILOS PARA O CAMPO DE SENHA ---
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        marginBottom: 20,
+    },
+    passwordInput: {
+        flex: 1,
+        padding: 12,
+        fontSize: 16,
+    },
+    eyeIcon: {
+        padding: 10,
+    },
+    // ----------------------------------------------
     button: {
         width: '100%',
         padding: 15,
@@ -167,6 +197,5 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 });
-
 
 export default LoginScreen;

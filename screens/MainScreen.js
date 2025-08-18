@@ -1,6 +1,7 @@
 // screens/MainScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+// A linha de import duplicada foi removida e 'Keyboard' foi adicionado aqui.
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator, Keyboard } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../api';
 import { COLORS, SIZES } from '../constants/theme';
@@ -18,7 +19,7 @@ const MainScreen = ({ navigation }) => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
-    const [isPanelVisible, setPanelVisible] = useState(false); // <-- Estado para controlar o menu
+    const [isPanelVisible, setPanelVisible] = useState(false);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -36,6 +37,7 @@ const MainScreen = ({ navigation }) => {
     }, []);
 
     const handleSearch = async () => {
+        Keyboard.dismiss();
         if (!selectedWarehouse) {
             Alert.alert("Atenção", "Selecione um armazém para buscar.");
             return;
@@ -153,9 +155,12 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderRadius: SIZES.radius,
         marginRight: 10,
+        height: 48, 
         justifyContent: 'center'
     },
-    picker: { width: '100%' },
+    picker: { 
+      width: '100%',
+    },
     profileButton: {
         padding: 5,
     },
