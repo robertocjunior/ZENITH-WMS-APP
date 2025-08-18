@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
 import { formatData } from '../utils/formatter';
 import LoadingOverlay from '../components/common/LoadingOverlay';
+import BaixaModal from '../components/modals/BaixaModal'; // <-- 1. Importe o novo modal
 
 const DetailItem = ({ label, value }) => (
     <View style={styles.detailItem}>
@@ -26,6 +27,7 @@ const DetailsScreen = () => {
 
     const [loading, setLoading] = useState(true);
     const [details, setDetails] = useState(null);
+    const [isBaixaModalVisible, setBaixaModalVisible] = useState(false); // <-- 2. Estado para controlar o modal
 
     useEffect(() => {
         const loadScreenData = async () => {
@@ -50,23 +52,40 @@ const DetailsScreen = () => {
 
         loadScreenData();
     }, [codArm, sequencia]);
+    
+    // --- 3. FUNÇÃO PARA CONFIRMAR A BAIXA ---
+    const handleConfirmBaixa = async (quantity) => {
+        setBaixaModalVisible(false);
+        setLoading(true);
+        try {
+            const payload = {
+                codarm: details.codarm,
+                sequencia: details.sequencia,
+                quantidade: quantity
+            };
+            const result = await api.executeTransaction('baixa', payload);
+            Alert.alert("Sucesso", result.message || "Baixa realizada com sucesso!");
+            navigation.goBack();
+        } catch (error) {
+            handleApiError(error); // <-- Chama o handler do contexto, que vai ativar o ErrorModal
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const renderActionButtons = () => {
-        if (!details || !permissions) {
-            return null;
-        }
-        
+        if (!details || !permissions) return null;
+
         const showBaixa = (details.endpic === 'S') ? permissions.bxaPick : permissions.baixa;
         const showPicking = permissions.pick && details.endpic !== 'S';
 
         const hasAnyAction = showBaixa || permissions.transfer || showPicking || permissions.corre;
-        if (!hasAnyAction) {
-            return null;
-        }
+        if (!hasAnyAction) return null;
 
         return (
             <View style={styles.actionsFooter}>
-                {showBaixa && <TouchableOpacity style={[styles.actionButton, styles.btnBaixar]}><Text style={styles.actionButtonText}>Baixar</Text></TouchableOpacity>}
+                {/* --- 4. AÇÃO onPress ATUALIZADA --- */}
+                {showBaixa && <TouchableOpacity style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></TouchableOpacity>}
                 {permissions.transfer && <TouchableOpacity style={[styles.actionButton, styles.btnTransferir]}><Text style={styles.actionButtonText}>Transferir</Text></TouchableOpacity>}
                 {showPicking && <TouchableOpacity style={[styles.actionButton, styles.btnPicking]}><Text style={styles.actionButtonText}>Picking</Text></TouchableOpacity>}
                 {permissions.corre && <TouchableOpacity style={[styles.actionButton, styles.btnCorrecao]}><Text style={styles.actionButtonText}>Correção</Text></TouchableOpacity>}
@@ -74,16 +93,18 @@ const DetailsScreen = () => {
         );
     };
 
-    if (loading) {
+    if (loading || !details) {
         return <LoadingOverlay visible={true} />;
-    }
-
-    if (!details) {
-        return null; 
     }
 
     return (
         <View style={styles.container}>
+            <BaixaModal
+                visible={isBaixaModalVisible}
+                onClose={() => setBaixaModalVisible(false)}
+                onConfirm={handleConfirmBaixa}
+                itemDetails={details}
+            />
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.white} />
@@ -93,7 +114,6 @@ const DetailsScreen = () => {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {/* --- 1. O ESTILO DO BLOCO AGORA É CONDICIONAL --- */}
                 <View style={[styles.heroCard, details.endpic === 'S' && styles.pickedHeroCard]}>
                     <Text style={styles.heroTitle}>{details.descrprod} - {details.marca}</Text>
                     <Text style={styles.heroSubtitle}>Cód. Prod.: {details.codprod}</Text>
@@ -117,6 +137,7 @@ const DetailsScreen = () => {
     );
 };
 
+// ... Seus estilos permanecem os mesmos
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -161,14 +182,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SIZES.padding * 2,
         borderWidth: 1,
-        borderColor: 'transparent', // Borda padrão invisível
+        borderColor: 'transparent',
     },
-    // --- 2. NOVO ESTILO PARA O BLOCO QUANDO FOR PICKING ---
     pickedHeroCard: {
         backgroundColor: COLORS.pickingBackground,
         borderColor: COLORS.pickingBorder,
     },
-    // ---------------------------------------------------
     heroTitle: {
         fontSize: 20,
         fontWeight: 'bold',

@@ -1,16 +1,31 @@
 // App.js
 import React from 'react';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AppNavigator from './navigation/AppNavigator';
+import ErrorModal from './components/common/ErrorModal'; // <-- Importe o novo modal
 import { LogBox } from 'react-native';
 
-// Ignora um aviso comum com o Picker que não afeta a funcionalidade
 LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
+
+// Um componente wrapper para acessar o contexto
+const AppContent = () => {
+  const { apiError, clearApiError } = useAuth();
+  return (
+    <>
+      <AppNavigator />
+      <ErrorModal
+        visible={!!apiError}
+        errorMessage={apiError}
+        onClose={clearApiError}
+      />
+    </>
+  );
+}
 
 export default function App() {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <AppContent />
     </AuthProvider>
   );
 }

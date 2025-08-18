@@ -9,7 +9,10 @@ export const AuthProvider = ({ children }) => {
     const [userSession, setUserSession] = useState(null);
     const [permissions, setPermissions] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    // --- 1. ESTADO PARA CONTROLAR O ERRO ---
+    const [apiError, setApiError] = useState(null);
 
+    // ... (useEffect e outras funções)
     useEffect(() => {
         const checkLogin = async () => {
             try {
@@ -51,8 +54,7 @@ export const AuthProvider = ({ children }) => {
             await AsyncStorage.removeItem('userSession');
         }
     };
-
-    // --- 1. NOVA FUNÇÃO PARA ATUALIZAR AS PERMISSÕES ---
+    
     const refreshPermissions = async () => {
         try {
             const perms = await api.fetchPermissions();
@@ -60,14 +62,16 @@ export const AuthProvider = ({ children }) => {
             console.log('Permissões atualizadas:', perms);
         } catch (error) {
             console.error('Falha ao atualizar permissões:', error.message);
-            handleApiError(error); // Se a sessão expirar, faz o logout
+            handleApiError(error);
         }
     };
-    // ----------------------------------------------------
 
     const handleApiError = (error) => {
         if (error.message === '401') {
             logout();
+        } else {
+            // --- 2. MOSTRA O ERRO EM VEZ DE SÓ FAZER LOGOUT ---
+            setApiError(error.message);
         }
     };
 
@@ -76,10 +80,12 @@ export const AuthProvider = ({ children }) => {
         permissions,
         isLoading,
         isAuthenticated: !!userSession,
+        apiError, // <-- 3. Expõe o erro
+        clearApiError: () => setApiError(null), // <-- 3. Expõe função para limpar o erro
         login,
         logout,
         handleApiError,
-        refreshPermissions, // <-- 2. Expondo a nova função para o resto do app
+        refreshPermissions,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
