@@ -1,0 +1,36 @@
+// constants/theme.js
+export const COLORS = {
+    primary: '#00529B',
+    secondary: '#00A3E0',
+    background: '#f0f2f5',
+    cardBackground: '#ffffff',
+    text: '#333333',
+    textLight: '#777777',
+    border: '#e0e0e0',
+    white: '#ffffff',
+    black: '#000000',
+    success: '#28a745',
+    info: '#007bff',
+    warning: '#ffc107',
+    orange: '#fd7e14',
+    danger: '#dc3545',
+    pickingBackground: '#fffbe6',
+    pickingBorder: '#ffe58f',
+    historyBackground: '#f0f8ff',
+    historyBorder: '#d6e8fa',
+    historyHeader: '#4a6a9b',
+    correctionBackground: '#fff8e1',
+    correctionBorder: '#ffecb3',
+    correctionHeader: '#c09b00',
+};
+
+export const SIZES = {
+    padding: 15,
+    radius: 8,
+    base: 8,
+    font: 14,
+    h1: 30,
+    h2: 22,
+    h3: 16,
+    body: 14,
+};
