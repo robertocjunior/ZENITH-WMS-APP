@@ -1,7 +1,9 @@
 // screens/MainScreen.js
-import React, { useState, useEffect } from 'react';
-// A linha de import duplicada foi removida e 'Keyboard' foi adicionado aqui.
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator, Keyboard } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react'; // Adicione useCallback
+import {
+    View, Text, StyleSheet, FlatList, TextInput,
+    TouchableOpacity, Alert, ActivityIndicator, Keyboard
+} from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../api';
 import { COLORS, SIZES } from '../constants/theme';
@@ -10,9 +12,11 @@ import { Ionicons } from '@expo/vector-icons';
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import ResultCard from '../components/ResultCard';
 import ProfilePanel from '../components/ProfilePanel';
+import { useFocusEffect } from '@react-navigation/native'; // Importe o useFocusEffect
+import * as SystemUI from 'expo-system-ui'; // Importe a nova biblioteca
 
 const MainScreen = ({ navigation }) => {
-    const { logout, handleApiError, userSession } = useAuth();
+    const { logout, handleApiError } = useAuth();
     const [warehouses, setWarehouses] = useState([]);
     const [selectedWarehouse, setSelectedWarehouse] = useState(null);
     const [filter, setFilter] = useState('');
@@ -20,6 +24,17 @@ const MainScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isPanelVisible, setPanelVisible] = useState(false);
+
+    // Adicione este hook para definir a cor de fundo do sistema para esta tela
+    useFocusEffect(
+        useCallback(() => {
+            const setSystemUIColor = async () => {
+                // Força a cor de fundo para o cinza do tema
+                await SystemUI.setBackgroundColorAsync(COLORS.background);
+            };
+            setSystemUIColor();
+        }, [])
+    );
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -83,7 +98,6 @@ const MainScreen = ({ navigation }) => {
                 onLogout={handleLogout}
             />
 
-            {/* ===== NOVO CABEÇALHO ===== */}
             <View style={styles.header}>
                 <View style={styles.topHeaderRow}>
                     <View style={styles.pickerContainer}>
@@ -118,7 +132,6 @@ const MainScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
             </View>
-            {/* ===== FIM DO NOVO CABEÇALHO ===== */}
 
             <FlatList
                 data={items}
@@ -137,12 +150,13 @@ const MainScreen = ({ navigation }) => {
     );
 };
 
+// Seus estilos permanecem os mesmos
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
     header: {
         backgroundColor: COLORS.primary,
         padding: SIZES.padding,
-        paddingTop: 50, // Ajuste para safe area
+        paddingTop: 50,
     },
     topHeaderRow: {
         flexDirection: 'row',

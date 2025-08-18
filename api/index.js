@@ -100,7 +100,7 @@ export function searchItems(codArm, filtro) {
 }
 
 export function fetchItemDetails(codArm, sequencia) {
-    return authenticatedFetch('/get-item-details', { codArm, sequencia: String(sequencia) });
+    return authenticatedFetch('/get-item-details', { codArm: String(codArm), sequencia: String(sequencia) });
 }
 
 export function fetchHistory() {

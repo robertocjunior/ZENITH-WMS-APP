@@ -1,45 +1,35 @@
 // screens/LoginScreen.js
 import React, { useState, useCallback } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    Image,
-    Alert,
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    ScrollView,
-    TouchableWithoutFeedback,
-    Keyboard,
-    Platform
+    View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
+    Alert, ActivityIndicator, KeyboardAvoidingView, ScrollView,
+    TouchableWithoutFeedback, Keyboard, Platform
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
 import { useFocusEffect } from '@react-navigation/native';
-import * as NavigationBar from 'expo-navigation-bar';
-import { Ionicons } from '@expo/vector-icons'; // <-- Importe o Ionicons
+import { Ionicons } from '@expo/vector-icons';
+import * as SystemUI from 'expo-system-ui'; // <-- 1. Importe a nova biblioteca
 
 const LoginScreen = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    // --- 1. NOVO ESTADO PARA VISIBILIDADE DA SENHA ---
     const [isPasswordVisible, setPasswordVisible] = useState(false);
     const { login } = useAuth();
 
+    // --- 2. ADICIONE ESTE BLOCO ATUALIZADO ---
+    // Ele será executado toda vez que a tela entrar em foco
     useFocusEffect(
         useCallback(() => {
-            const setNavBarColor = async () => {
-                if (Platform.OS === 'android') {
-                    await NavigationBar.setBackgroundColorAsync(COLORS.primary);
-                    await NavigationBar.setButtonStyleAsync('light');
-                }
+            const setSystemUIColor = async () => {
+                // Força a cor de fundo da janela principal para o azul do tema
+                await SystemUI.setBackgroundColorAsync(COLORS.primary);
             };
-            setNavBarColor();
+            setSystemUIColor();
         }, [])
     );
+    // ----------------------------------------
 
     const handleLogin = async () => {
         if (!username || !password) {
@@ -80,19 +70,18 @@ const LoginScreen = () => {
                         />
 
                         <Text style={styles.label}>Senha</Text>
-                        {/* --- 2. NOVA ESTRUTURA PARA O CAMPO DE SENHA --- */}
                         <View style={styles.passwordContainer}>
                             <TextInput
                                 style={styles.passwordInput}
                                 value={password}
                                 onChangeText={setPassword}
-                                secureTextEntry={!isPasswordVisible} // Controlado pelo estado
+                                secureTextEntry={!isPasswordVisible}
                                 autoCapitalize="none"
                                 autoCompleteType="password"
                             />
                             <TouchableOpacity
                                 style={styles.eyeIcon}
-                                onPress={() => setPasswordVisible(!isPasswordVisible)} // Ação de clique
+                                onPress={() => setPasswordVisible(!isPasswordVisible)}
                             >
                                 <Ionicons
                                     name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
@@ -112,6 +101,7 @@ const LoginScreen = () => {
     );
 };
 
+// Seus estilos permanecem os mesmos
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -164,7 +154,6 @@ const styles = StyleSheet.create({
         borderColor: COLORS.border,
         marginBottom: 20,
     },
-    // --- 3. NOVOS ESTILOS PARA O CAMPO DE SENHA ---
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -182,7 +171,6 @@ const styles = StyleSheet.create({
     eyeIcon: {
         padding: 10,
     },
-    // ----------------------------------------------
     button: {
         width: '100%',
         padding: 15,
