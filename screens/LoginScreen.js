@@ -1,14 +1,47 @@
 // screens/LoginScreen.js
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react'; // Adicione useCallback
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    Image,
+    Alert,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    ScrollView,
+    TouchableWithoutFeedback,
+    Keyboard,
+    Platform
+} from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
+import { useFocusEffect } from '@react-navigation/native'; // <-- 1. Importe o useFocusEffect
+import * as NavigationBar from 'expo-navigation-bar';      // <-- 2. Importe a biblioteca
 
 const LoginScreen = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
+
+    // --- 3. ADICIONE ESTE BLOCO ---
+    // Este hook será executado toda vez que a tela de login entrar em foco
+    useFocusEffect(
+        useCallback(() => {
+            const setNavBarColor = async () => {
+                if (Platform.OS === 'android') {
+                    // Define a cor da barra de navegação para o azul primário
+                    await NavigationBar.setBackgroundColorAsync(COLORS.primary);
+                    // Garante que os botões da barra (home, back) fiquem claros
+                    await NavigationBar.setButtonStyleAsync('light');
+                }
+            };
+            setNavBarColor();
+        }, [])
+    );
+    // ----------------------------
 
     const handleLogin = async () => {
         if (!username || !password) {
@@ -26,52 +59,64 @@ const LoginScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.loginContainer}>
-                <View style={styles.logoContainer}>
-                    <Image source={require('../assets/icons/icon512x512transparent.png')} style={styles.logoIcon} />
-                    <Image source={require('../assets/icons/name-transparent.png')} style={styles.logoName} />
-                </View>
-                <Text style={styles.subtitle}>Faça login com seu usuário e senha do Sankhya.</Text>
-                
-                <Text style={styles.label}>Usuário</Text>
-                <TextInput
-                    style={styles.input}
-                    value={username}
-                    onChangeText={setUsername}
-                    autoCapitalize="none"
-                    autoCompleteType="username"
-                />
-                
-                <Text style={styles.label}>Senha</Text>
-                <TextInput
-                    style={styles.input}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    autoCompleteType="password"
-                />
-                
-                <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-                    {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
-                </TouchableOpacity>
-            </View>
-        </View>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.container}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.loginContainer}>
+                        <View style={styles.logoContainer}>
+                            <Image source={require('../assets/icons/icon512x512transparent.png')} style={styles.logoIcon} />
+                            <Image source={require('../assets/icons/name-transparent.png')} style={styles.logoName} />
+                        </View>
+                        <Text style={styles.subtitle}>Faça login com seu usuário e senha do Sankhya.</Text>
+                        
+                        <Text style={styles.label}>Usuário</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={username}
+                            onChangeText={setUsername}
+                            autoCapitalize="none"
+                            autoCompleteType="username"
+                        />
+                        
+                        <Text style={styles.label}>Senha</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                            autoCompleteType="password"
+                        />
+                        
+                        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+                            {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     );
 };
 
+// ... (seus estilos permanecem os mesmos)
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: COLORS.primary,
+    },
+    scrollContainer: {
+        flexGrow: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: COLORS.primary,
+        padding: 20,
     },
     loginContainer: {
         backgroundColor: COLORS.cardBackground,
         padding: 40,
         borderRadius: 12,
-        width: '90%',
+        width: '100%',
         maxWidth: 400,
     },
     logoContainer: {
@@ -122,5 +167,6 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 });
+
 
 export default LoginScreen;

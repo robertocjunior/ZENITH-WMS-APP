@@ -7,16 +7,18 @@ import { COLORS, SIZES } from '../constants/theme';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import LoadingOverlay from '../components/common/LoadingOverlay';
-import ResultCard from '../components/ResultCard'; // Criaremos este componente a seguir
+import ResultCard from '../components/ResultCard';
+import ProfilePanel from '../components/ProfilePanel';
 
 const MainScreen = ({ navigation }) => {
-    const { logout, handleApiError } = useAuth();
+    const { logout, handleApiError, userSession } = useAuth();
     const [warehouses, setWarehouses] = useState([]);
     const [selectedWarehouse, setSelectedWarehouse] = useState(null);
     const [filter, setFilter] = useState('');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
+    const [isPanelVisible, setPanelVisible] = useState(false); // <-- Estado para controlar o menu
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -40,7 +42,7 @@ const MainScreen = ({ navigation }) => {
         }
         setLoading(true);
         try {
-            const result = await api.searchItems(selectedWarehouse, filter);
+            const result = await api.searchItems(String(selectedWarehouse), filter);
             setItems(result);
         } catch (error) {
             handleApiError(error);
@@ -53,56 +55,79 @@ const MainScreen = ({ navigation }) => {
     const handleShowDetails = (sequencia) => {
         navigation.navigate('Details', { sequencia, codArm: selectedWarehouse });
     };
+    
+    const handleNavigateToHistory = () => {
+        setPanelVisible(false);
+        navigation.navigate('History');
+    };
+
+    const handleLogout = () => {
+        setPanelVisible(false);
+        logout();
+    };
+
 
     if (initialLoading) {
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-            </View>
-        );
+        return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
     }
 
     return (
         <View style={styles.container}>
             <LoadingOverlay visible={loading} />
-            <View style={styles.header}>
-                <Text style={styles.label}>Armazém</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={selectedWarehouse}
-                        onValueChange={(itemValue) => setSelectedWarehouse(itemValue)}
-                        style={styles.picker}
-                    >
-                        <Picker.Item label="Selecione um Armazém" value={null} />
-                        {warehouses.map(([cod, desc]) => (
-                            <Picker.Item key={cod} label={desc} value={cod} />
-                        ))}
-                    </Picker>
-                </View>
+            <ProfilePanel 
+                visible={isPanelVisible}
+                onClose={() => setPanelVisible(false)}
+                onNavigateToHistory={handleNavigateToHistory}
+                onLogout={handleLogout}
+            />
 
-                <View style={styles.searchBar}>
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Buscar por sequência, produto..."
-                        value={filter}
-                        onChangeText={setFilter}
-                    />
-                    <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-                        <Ionicons name="search" size={24} color={COLORS.white} />
+            {/* ===== NOVO CABEÇALHO ===== */}
+            <View style={styles.header}>
+                <View style={styles.topHeaderRow}>
+                    <View style={styles.pickerContainer}>
+                         <Picker
+                            selectedValue={selectedWarehouse}
+                            onValueChange={(itemValue) => setSelectedWarehouse(itemValue)}
+                            style={styles.picker}
+                        >
+                            <Picker.Item label="Selecione um Armazém" value={null} />
+                            {warehouses.map(([cod, desc]) => (
+                                <Picker.Item key={cod} label={desc} value={cod} />
+                            ))}
+                        </Picker>
+                    </View>
+                    <TouchableOpacity style={styles.profileButton} onPress={() => setPanelVisible(true)}>
+                        <Ionicons name="person-circle-outline" size={32} color={COLORS.white} />
                     </TouchableOpacity>
                 </View>
-                 <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-                    <Ionicons name="log-out-outline" size={30} color={COLORS.white} />
-                </TouchableOpacity>
+                <View style={styles.searchBar}>
+                    <View style={styles.searchInputWrapper}>
+                        <Ionicons name="search" size={20} color={COLORS.textLight} style={{marginLeft: 10}} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Buscar..."
+                            value={filter}
+                            onChangeText={setFilter}
+                            onSubmitEditing={handleSearch}
+                        />
+                    </View>
+                    <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+                        <Text style={styles.searchButtonText}>Buscar</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
+            {/* ===== FIM DO NOVO CABEÇALHO ===== */}
+
             <FlatList
                 data={items}
-                keyExtractor={(item) => item[0].toString()} // sequencia é a chave
+                keyExtractor={(item) => item[0].toString()}
                 renderItem={({ item }) => <ResultCard item={item} onPress={handleShowDetails} />}
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={() => (
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>Nenhum resultado encontrado.</Text>
+                        <Ionicons name="home-outline" size={60} color={COLORS.textLight} />
+                        <Text style={styles.emptyText}>Nenhum resultado para exibir</Text>
+                        <Text style={styles.emptySubText}>Selecione um armazém para começar</Text>
                     </View>
                 )}
             />
@@ -115,40 +140,65 @@ const styles = StyleSheet.create({
     header: {
         backgroundColor: COLORS.primary,
         padding: SIZES.padding,
-        paddingTop: 50,
-        borderBottomLeftRadius: SIZES.radius,
-        borderBottomRightRadius: SIZES.radius,
+        paddingTop: 50, // Ajuste para safe area
     },
-    label: { color: COLORS.white, marginBottom: 5 },
-    pickerContainer: {
-        backgroundColor: COLORS.white,
-        borderRadius: SIZES.radius,
+    topHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: SIZES.padding,
     },
-    picker: { height: 50, width: '100%' },
-    searchBar: { flexDirection: 'row', alignItems: 'center' },
-    searchInput: {
+    pickerContainer: {
         flex: 1,
         backgroundColor: COLORS.white,
-        paddingHorizontal: SIZES.padding,
-        height: 50,
         borderRadius: SIZES.radius,
         marginRight: 10,
+        justifyContent: 'center'
+    },
+    picker: { width: '100%' },
+    profileButton: {
+        padding: 5,
+    },
+    searchBar: { 
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    searchInputWrapper: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.white,
+        borderRadius: SIZES.radius,
+        height: 48,
+    },
+    searchInput: {
+        flex: 1,
+        paddingHorizontal: SIZES.padding / 2,
+        fontSize: 16,
     },
     searchButton: {
         backgroundColor: COLORS.secondary,
-        padding: 12,
+        height: 48,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
         borderRadius: SIZES.radius,
     },
-    list: { padding: SIZES.padding },
+    searchButtonText: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    list: { padding: SIZES.padding, flexGrow: 1 },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 50,
+        paddingTop: '30%',
     },
-    emptyText: { color: COLORS.textLight, fontSize: 16 },
-    logoutButton: { position: 'absolute', top: 55, right: 15 }
+    emptyText: { color: COLORS.textLight, fontSize: 18, marginTop: 15 },
+    emptySubText: { color: COLORS.textLight, fontSize: 14 }
 });
 
 export default MainScreen;

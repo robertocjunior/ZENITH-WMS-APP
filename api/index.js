@@ -2,25 +2,46 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// -------------------------------------------------------------------------
-// ATENÇÃO: Verifique se este IP ainda é o correto para sua máquina.
-// -------------------------------------------------------------------------
-const API_BASE_URL = 'http://192.168.2.57:3030/api'; // Usei o IP do seu log de erro
+const API_BASE_URL = 'http://192.168.2.57:3030/api'; // IP do seu log de erro
 
-// Função genérica para futuras chamadas autenticadas (ainda não usada no login)
+// Função genérica para chamadas autenticadas
 async function authenticatedFetch(endpoint, body = {}) {
-    // A lógica de autenticação (com sessionToken ou outro método) viria aqui
-    // Por enquanto, vamos focar no login
+    // 1. Pega o token de sessão salvo no login
+    const token = await AsyncStorage.getItem('sessionToken');
+    if (!token) {
+        // Se não houver token, força o logout no app
+        throw new Error('401'); 
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // 2. Envia o token no cabeçalho para o backend
+            'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (response.status === 401) {
+        throw new Error('401'); // Sessão expirou no backend
+    }
+    
+    // O await response.json() pode falhar se o corpo for vazio
+    const responseText = await response.text();
+    const data = responseText ? JSON.parse(responseText) : null;
+
+    if (!response.ok) {
+        throw new Error(data ? data.message : 'Erro na comunicação com o servidor.');
+    }
+    
+    return data;
 }
 
 export async function login(username, password) {
-    // 1. Constrói a chave de armazenamento específica para o usuário
     const userTokenKey = `deviceToken_${username.toUpperCase()}`;
-    
-    // 2. Procura por um token que já pertença a este usuário neste dispositivo
     let deviceToken = await AsyncStorage.getItem(userTokenKey);
 
-    // 3. Se não encontrar, gera um novo a partir do ID de instalação do app
     if (!deviceToken) {
         deviceToken = Constants.installationId;
     }
@@ -33,30 +54,63 @@ export async function login(username, password) {
     
     const data = await response.json();
 
-    // 4. Lógica CORRIGIDA: Trata a resposta do servidor
     if (!response.ok) {
-        // Se a resposta de erro contiver um novo deviceToken (caso "Dispositivo novo")...
         if (data && data.deviceToken) {
-            // ...salva o novo token para ser usado na próxima tentativa.
             await AsyncStorage.setItem(userTokenKey, data.deviceToken);
         }
-        // Lança o erro para ser exibido na tela
         throw new Error(data.message || 'Erro desconhecido no login.');
     }
     
-    // 5. Se o login for bem-sucedido (200 OK)...
     if (data && data.deviceToken) {
-        // ...salva ou atualiza o token no armazenamento.
         await AsyncStorage.setItem(userTokenKey, data.deviceToken);
     }
 
-    // ATENÇÃO: A API de login não parece retornar um "sessionToken" para autenticar
-    // as próximas requisições. O código foi ajustado para não esperar por ele.
-    // Salva a sessão do usuário para manter o estado de "logado" no app.
-    await AsyncStorage.setItem('userSession', JSON.stringify(data));
+    // 3. Salva o sessionToken que o backend DEVE retornar
+    if (data && data.sessionToken) {
+        await AsyncStorage.setItem('sessionToken', data.sessionToken);
+    } else {
+        // Se o backend não enviar o token, o app não poderá fazer chamadas autenticadas
+        console.warn('AVISO: O sessionToken não foi recebido do servidor após o login.');
+    }
 
+    await AsyncStorage.setItem('userSession', JSON.stringify(data));
     return data;
 }
 
-// Funções futuras...
-// export async function logout() { ... }
+// --- Funções da API Reativadas ---
+
+export async function logout() {
+    // O corpo pode ser vazio, então tratamos a resposta de forma diferente
+    await authenticatedFetch('/logout');
+    // Limpa o armazenamento local após o logout
+    await AsyncStorage.removeItem('sessionToken');
+    await AsyncStorage.removeItem('userSession');
+}
+
+export function fetchWarehouses() {
+    return authenticatedFetch('/get-warehouses');
+}
+
+export function fetchPermissions() {
+    return authenticatedFetch('/get-permissions');
+}
+
+export function searchItems(codArm, filtro) {
+    return authenticatedFetch('/search-items', { codArm, filtro });
+}
+
+export function fetchItemDetails(codArm, sequencia) {
+    return authenticatedFetch('/get-item-details', { codArm, sequencia: String(sequencia) });
+}
+
+export function fetchHistory() {
+    return authenticatedFetch('/get-history');
+}
+
+export function fetchPickingLocations(codarm, codprod, sequencia) {
+    return authenticatedFetch('/get-picking-locations', { codarm, codprod, sequencia });
+}
+
+export function executeTransaction(type, payload) {
+    return authenticatedFetch('/execute-transaction', { type, payload });
+}
