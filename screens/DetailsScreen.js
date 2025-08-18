@@ -193,13 +193,13 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.cardBackground,
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between', // Garante espaço entre os botões
+        gap: 10, // Usar um gap para o espaçamento
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     actionButton: {
-        width: '48.5%', // Define a largura para caberem 2 por linha com espaço
-        marginBottom: 10, // Adiciona espaço vertical entre as linhas de botões
+        flexGrow: 1, // Permite que o botão cresça
+        flexBasis: '40%', // Define uma largura base menor que 50% para caberem 2
         padding: 18,
         borderRadius: SIZES.radius,
         alignItems: 'center',
