@@ -17,13 +17,11 @@ export const AuthProvider = ({ children }) => {
                 const session = await AsyncStorage.getItem('userSession');
                 if (token && session) {
                     setUserSession(JSON.parse(session));
-                    // Aproveita para recarregar as permissões
                     const perms = await api.fetchPermissions();
                     setPermissions(perms);
                 }
             } catch (e) {
                 console.error("Falha ao verificar sessão:", e);
-                // Se der erro (ex: 401), desloga
                 await logout();
             } finally {
                 setIsLoading(false);
@@ -36,8 +34,6 @@ export const AuthProvider = ({ children }) => {
         const response = await api.login(username, password);
         setUserSession(response);
         await AsyncStorage.setItem('userSession', JSON.stringify(response));
-
-        // Busca permissões após o login
         const perms = await api.fetchPermissions();
         setPermissions(perms);
     };
@@ -69,14 +65,6 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         handleApiError,
-        fetchInitialData: async () => {
-             try {
-                const perms = await api.fetchPermissions();
-                setPermissions(perms);
-             } catch (e) {
-                handleApiError(e)
-             }
-        }
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
