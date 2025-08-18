@@ -9,7 +9,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
     const [quantity, setQuantity] = useState('');
     const [destinationAddress, setDestinationAddress] = useState('');
     const [isMarkedAsPicking, setMarkedAsPicking] = useState(false);
-    
+
     // Estados para o Dropdown
     const [open, setOpen] = useState(false);
     const [warehouseValue, setWarehouseValue] = useState(null);
@@ -22,7 +22,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
             setDestinationAddress('');
             setMarkedAsPicking(false);
             setWarehouseValue(null);
-            
+
             // Formata os armazéns para o DropDownPicker
             const formattedWarehouses = warehouses.map(([cod, desc]) => ({
                 label: desc,
@@ -43,7 +43,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
         if (!destinationAddress.trim()) {
             return alert('Por favor, insira um endereço de destino.');
         }
-        
+
         onConfirm({
             quantity: numQuantity,
             destinationWarehouse: warehouseValue,
@@ -69,7 +69,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
                     </Text>
 
                     <Text style={styles.label}>Quantidade a transferir:</Text>
-                    <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType="number-pad"/>
+                    <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType="numeric" />
 
                     <Text style={styles.label}>Armazém de Destino:</Text>
                     <DropDownPicker
@@ -88,7 +88,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
                     />
 
                     <Text style={styles.label}>Endereço de Destino:</Text>
-                    <TextInput style={styles.input} value={destinationAddress} onChangeText={setDestinationAddress} placeholder="Digite o endereço de destino"/>
+                    <TextInput style={styles.input} value={destinationAddress} onChangeText={setDestinationAddress} keyboardType="numeric" placeholder="Digite o endereço de destino" />
 
                     {/* Checkbox condicional */}
                     {permissions.criaPick && (

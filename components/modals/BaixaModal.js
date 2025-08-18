@@ -43,7 +43,8 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                         style={styles.input}
                         value={quantity}
                         onChangeText={setQuantity}
-                        keyboardType="number-pad"
+                        keyboardType="numeric"
+                        placeholder="Digite a quantidade"
                         autoFocus={true}
                     />
 
