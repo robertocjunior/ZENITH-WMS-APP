@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
         const response = await api.login(username, password);
         setUserSession(response);
         await AsyncStorage.setItem('userSession', JSON.stringify(response));
+
         const perms = await api.fetchPermissions();
         setPermissions(perms);
     };
@@ -51,6 +52,19 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // --- 1. NOVA FUNÇÃO PARA ATUALIZAR AS PERMISSÕES ---
+    const refreshPermissions = async () => {
+        try {
+            const perms = await api.fetchPermissions();
+            setPermissions(perms);
+            console.log('Permissões atualizadas:', perms);
+        } catch (error) {
+            console.error('Falha ao atualizar permissões:', error.message);
+            handleApiError(error); // Se a sessão expirar, faz o logout
+        }
+    };
+    // ----------------------------------------------------
+
     const handleApiError = (error) => {
         if (error.message === '401') {
             logout();
@@ -65,6 +79,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         handleApiError,
+        refreshPermissions, // <-- 2. Expondo a nova função para o resto do app
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

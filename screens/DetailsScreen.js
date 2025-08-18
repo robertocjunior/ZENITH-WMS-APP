@@ -1,6 +1,6 @@
 // screens/DetailsScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -10,7 +10,6 @@ import { COLORS, SIZES } from '../constants/theme';
 import { formatData } from '../utils/formatter';
 import LoadingOverlay from '../components/common/LoadingOverlay';
 
-// Um pequeno componente reutilizável para os itens de detalhe
 const DetailItem = ({ label, value }) => (
     <View style={styles.detailItem}>
         <Text style={styles.detailItemLabel}>{label}</Text>
@@ -21,7 +20,7 @@ const DetailItem = ({ label, value }) => (
 const DetailsScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
-    const { permissions, handleApiError } = useAuth();
+    const { permissions, handleApiError, refreshPermissions } = useAuth();
     
     const { sequencia, codArm } = route.params;
 
@@ -29,27 +28,34 @@ const DetailsScreen = () => {
     const [details, setDetails] = useState(null);
 
     useEffect(() => {
-        const fetchDetails = async () => {
+        const loadScreenData = async () => {
             if (!codArm || !sequencia) return;
             setLoading(true);
             try {
-                const detailsData = await api.fetchItemDetails(String(codArm), sequencia);
+                const [detailsData] = await Promise.all([
+                    api.fetchItemDetails(String(codArm), sequencia),
+                    refreshPermissions()
+                ]);
+                
                 const [codarm, seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao] = detailsData;
                 setDetails({ codarm, sequencia: seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao });
+
             } catch (error) {
                 handleApiError(error);
-                Alert.alert("Erro", "Não foi possível carregar os detalhes do item.", [{ text: 'OK', onPress: () => navigation.goBack() }]);
+                Alert.alert("Erro", "Não foi possível carregar os dados do item.", [{ text: 'OK', onPress: () => navigation.goBack() }]);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchDetails();
+        loadScreenData();
     }, [codArm, sequencia]);
 
     const renderActionButtons = () => {
-        if (!details || !permissions) return null;
-
+        if (!details || !permissions) {
+            return null;
+        }
+        
         const showBaixa = (details.endpic === 'S') ? permissions.bxaPick : permissions.baixa;
         const showPicking = permissions.pick && details.endpic !== 'S';
 
@@ -81,13 +87,14 @@ const DetailsScreen = () => {
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-                    <Text style={styles.headerTitle}>Voltar</Text>
+                    <Text style={styles.headerBackText}>Voltar</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerMainTitle}>Detalhes do Endereço</Text>
+                <Text style={styles.headerMainTitle}>Detalhes</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <View style={styles.heroCard}>
+                {/* --- 1. O ESTILO DO BLOCO AGORA É CONDICIONAL --- */}
+                <View style={[styles.heroCard, details.endpic === 'S' && styles.pickedHeroCard]}>
                     <Text style={styles.heroTitle}>{details.descrprod} - {details.marca}</Text>
                     <Text style={styles.heroSubtitle}>Cód. Prod.: {details.codprod}</Text>
                 </View>
@@ -117,31 +124,32 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: COLORS.primary,
-        paddingTop: 50,
+        paddingTop: Platform.OS === 'android' ? 40 : 50,
         paddingBottom: SIZES.padding,
         paddingHorizontal: SIZES.padding,
         flexDirection: 'row',
         alignItems: 'center',
+        height: Platform.OS === 'android' ? 90 : 100,
     },
     backButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        zIndex: 1, 
     },
-    headerTitle: {
+    headerBackText: {
         color: COLORS.white,
         fontSize: 16,
         marginLeft: 8,
     },
     headerMainTitle: {
         color: COLORS.white,
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         position: 'absolute',
         left: 0,
         right: 0,
         textAlign: 'center',
-        paddingTop: 50,
-        zIndex: -1,
+        paddingTop: Platform.OS === 'android' ? 40 : 50,
     },
     scrollContainer: {
         padding: SIZES.padding,
@@ -152,7 +160,15 @@ const styles = StyleSheet.create({
         borderRadius: SIZES.radius,
         alignItems: 'center',
         marginBottom: SIZES.padding * 2,
+        borderWidth: 1,
+        borderColor: 'transparent', // Borda padrão invisível
     },
+    // --- 2. NOVO ESTILO PARA O BLOCO QUANDO FOR PICKING ---
+    pickedHeroCard: {
+        backgroundColor: COLORS.pickingBackground,
+        borderColor: COLORS.pickingBorder,
+    },
+    // ---------------------------------------------------
     heroTitle: {
         fontSize: 20,
         fontWeight: 'bold',
@@ -187,25 +203,23 @@ const styles = StyleSheet.create({
         color: COLORS.text,
         marginTop: 4,
     },
-    // --- ESTILOS CORRIGIDOS ABAIXO ---
     actionsFooter: {
         padding: SIZES.padding,
         backgroundColor: COLORS.cardBackground,
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10, // Usar um gap para o espaçamento
+        gap: 10,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     actionButton: {
-        flexGrow: 1, // Permite que o botão cresça
-        flexBasis: '40%', // Define uma largura base menor que 50% para caberem 2
+        flexGrow: 1,
+        flexBasis: '40%',
         padding: 18,
         borderRadius: SIZES.radius,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    // ---------------------------------
     actionButtonText: {
         color: COLORS.white,
         fontSize: 16,
