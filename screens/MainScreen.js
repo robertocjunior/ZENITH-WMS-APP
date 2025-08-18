@@ -1,35 +1,33 @@
 // screens/MainScreen.js
-import React, { useState, useEffect, useCallback } from 'react'; // Adicione useCallback
-import {
-    View, Text, StyleSheet, FlatList, TextInput,
-    TouchableOpacity, Alert, ActivityIndicator, Keyboard
-} from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator, Keyboard } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../api';
 import { COLORS, SIZES } from '../constants/theme';
-import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import * as SystemUI from 'expo-system-ui';
+import DropDownPicker from 'react-native-dropdown-picker';
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import ResultCard from '../components/ResultCard';
 import ProfilePanel from '../components/ProfilePanel';
-import { useFocusEffect } from '@react-navigation/native'; // Importe o useFocusEffect
-import * as SystemUI from 'expo-system-ui'; // Importe a nova biblioteca
 
 const MainScreen = ({ navigation }) => {
     const { logout, handleApiError } = useAuth();
-    const [warehouses, setWarehouses] = useState([]);
-    const [selectedWarehouse, setSelectedWarehouse] = useState(null);
+    
+    const [open, setOpen] = useState(false);
+    const [warehouseValue, setWarehouseValue] = useState(null);
+    const [warehouseItems, setWarehouseItems] = useState([]);
+    
     const [filter, setFilter] = useState('');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isPanelVisible, setPanelVisible] = useState(false);
 
-    // Adicione este hook para definir a cor de fundo do sistema para esta tela
     useFocusEffect(
         useCallback(() => {
             const setSystemUIColor = async () => {
-                // Força a cor de fundo para o cinza do tema
                 await SystemUI.setBackgroundColorAsync(COLORS.background);
             };
             setSystemUIColor();
@@ -40,7 +38,11 @@ const MainScreen = ({ navigation }) => {
         const loadInitialData = async () => {
             try {
                 const whs = await api.fetchWarehouses();
-                setWarehouses(whs);
+                const formattedWarehouses = whs.map(([cod, desc]) => ({
+                    label: desc,
+                    value: cod
+                }));
+                setWarehouseItems(formattedWarehouses);
             } catch (error) {
                 handleApiError(error);
                 Alert.alert("Erro", "Não foi possível carregar os armazéns.");
@@ -53,13 +55,13 @@ const MainScreen = ({ navigation }) => {
 
     const handleSearch = async () => {
         Keyboard.dismiss();
-        if (!selectedWarehouse) {
+        if (!warehouseValue) {
             Alert.alert("Atenção", "Selecione um armazém para buscar.");
             return;
         }
         setLoading(true);
         try {
-            const result = await api.searchItems(String(selectedWarehouse), filter);
+            const result = await api.searchItems(String(warehouseValue), filter);
             setItems(result);
         } catch (error) {
             handleApiError(error);
@@ -70,7 +72,7 @@ const MainScreen = ({ navigation }) => {
     };
     
     const handleShowDetails = (sequencia) => {
-        navigation.navigate('Details', { sequencia, codArm: selectedWarehouse });
+        navigation.navigate('Details', { sequencia, codArm: warehouseValue });
     };
     
     const handleNavigateToHistory = () => {
@@ -100,17 +102,22 @@ const MainScreen = ({ navigation }) => {
 
             <View style={styles.header}>
                 <View style={styles.topHeaderRow}>
-                    <View style={styles.pickerContainer}>
-                         <Picker
-                            selectedValue={selectedWarehouse}
-                            onValueChange={(itemValue) => setSelectedWarehouse(itemValue)}
-                            style={styles.picker}
-                        >
-                            <Picker.Item label="Selecione um Armazém" value={null} />
-                            {warehouses.map(([cod, desc]) => (
-                                <Picker.Item key={cod} label={desc} value={cod} />
-                            ))}
-                        </Picker>
+                    {/* --- 1. Adicionado um <View> em volta do DropDownPicker --- */}
+                    <View style={styles.pickerWrapper}>
+                        <DropDownPicker
+                            open={open}
+                            value={warehouseValue}
+                            items={warehouseItems}
+                            setOpen={setOpen}
+                            setValue={setWarehouseValue}
+                            setItems={setWarehouseItems}
+                            placeholder="Selecione um Armazém"
+                            style={styles.dropdownPicker} // Estilo do picker interno
+                            containerStyle={styles.dropdownContainer} // Estilo do container do picker
+                            dropDownContainerStyle={styles.dropdownList} // Estilo da lista que abre
+                            zIndex={3000}
+                            zIndexInverse={1000}
+                        />
                     </View>
                     <TouchableOpacity style={styles.profileButton} onPress={() => setPanelVisible(true)}>
                         <Ionicons name="person-circle-outline" size={32} color={COLORS.white} />
@@ -150,7 +157,6 @@ const MainScreen = ({ navigation }) => {
     );
 };
 
-// Seus estilos permanecem os mesmos
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
     header: {
@@ -164,17 +170,28 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SIZES.padding,
     },
-    pickerContainer: {
+    // --- 2. Novos estilos e modificações ---
+    pickerWrapper: {
         flex: 1,
-        backgroundColor: COLORS.white,
-        borderRadius: SIZES.radius,
         marginRight: 10,
-        height: 48, 
-        justifyContent: 'center'
+        borderRadius: SIZES.radius,
+        borderWidth: 1,
+        borderColor: COLORS.border, // Borda fica neste container
+        backgroundColor: COLORS.white, // Fundo branco fica aqui
+        height: 48,
+        justifyContent: 'center',
     },
-    picker: { 
-      width: '100%',
+    dropdownContainer: {
+        height: 48,
     },
+    dropdownPicker: {
+        borderWidth: 0, // Remove a borda do componente interno
+        backgroundColor: 'transparent', // Remove o fundo do componente interno
+    },
+    dropdownList: {
+        borderColor: COLORS.border,
+    },
+    // ------------------------------------
     profileButton: {
         padding: 5,
     },
