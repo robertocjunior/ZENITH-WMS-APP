@@ -10,6 +10,7 @@ import { COLORS, SIZES } from '../constants/theme';
 import { formatData } from '../utils/formatter';
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import BaixaModal from '../components/modals/BaixaModal';
+import TransferModal from '../components/modals/TransferModal'; // <-- 1. Importe o novo modal
 
 const DetailItem = ({ label, value }) => (
     <View style={styles.detailItem}>
@@ -21,14 +22,15 @@ const DetailItem = ({ label, value }) => (
 const DetailsScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
-    const { permissions, handleApiError, refreshPermissions } = useAuth();
+    // --- 2. PEGUE warehouses DO CONTEXTO ---
+    const { permissions, handleApiError, refreshPermissions, warehouses } = useAuth();
     
-    // --- 1. RECEBE O FILTRO ORIGINAL DA BUSCA ---
     const { sequencia, codArm, filter } = route.params;
 
     const [loading, setLoading] = useState(true);
     const [details, setDetails] = useState(null);
     const [isBaixaModalVisible, setBaixaModalVisible] = useState(false);
+    const [isTransferModalVisible, setTransferModalVisible] = useState(false); // <-- 3. Estado para o modal
 
     useEffect(() => {
         const loadScreenData = async () => {
@@ -58,21 +60,34 @@ const DetailsScreen = () => {
         setBaixaModalVisible(false);
         setLoading(true);
         try {
-            const payload = {
-                codarm: details.codarm,
-                sequencia: details.sequencia,
-                quantidade: quantity
-            };
+            const payload = { codarm: details.codarm, sequencia: details.sequencia, quantidade: quantity };
             const result = await api.executeTransaction('baixa', payload);
             Alert.alert("Sucesso", result.message || "Baixa realizada com sucesso!");
-            
-            // --- 2. ENVIA OS CRITÉRIOS DE BUSCA DE VOLTA ---
-            navigation.navigate('Main', {
-                refresh: true,
-                warehouseValue: details.codarm,
-                filter: filter // Envia o filtro original de volta
-            });
+            navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    // --- 4. FUNÇÃO PARA CONFIRMAR A TRANSFERÊNCIA ---
+    const handleConfirmTransfer = async (transferData) => {
+        setTransferModalVisible(false);
+        setLoading(true);
+        try {
+            const payload = {
+                origem: details,
+                destino: {
+                    armazemDestino: transferData.destinationWarehouse,
+                    enderecoDestino: transferData.destinationAddress,
+                    quantidade: transferData.quantity,
+                    criarPick: transferData.isMarkedAsPicking
+                }
+            };
+            const result = await api.executeTransaction('transferencia', payload);
+            Alert.alert("Sucesso", result.message || "Transferência realizada com sucesso!");
+            navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
         } catch (error) {
             handleApiError(error);
         } finally {
@@ -92,7 +107,8 @@ const DetailsScreen = () => {
         return (
             <View style={styles.actionsFooter}>
                 {showBaixa && <TouchableOpacity style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></TouchableOpacity>}
-                {permissions.transfer && <TouchableOpacity style={[styles.actionButton, styles.btnTransferir]}><Text style={styles.actionButtonText}>Transferir</Text></TouchableOpacity>}
+                {/* --- 5. AÇÃO onPress ATUALIZADA --- */}
+                {permissions.transfer && <TouchableOpacity style={[styles.actionButton, styles.btnTransferir]} onPress={() => setTransferModalVisible(true)}><Text style={styles.actionButtonText}>Transferir</Text></TouchableOpacity>}
                 {showPicking && <TouchableOpacity style={[styles.actionButton, styles.btnPicking]}><Text style={styles.actionButtonText}>Picking</Text></TouchableOpacity>}
                 {permissions.corre && <TouchableOpacity style={[styles.actionButton, styles.btnCorrecao]}><Text style={styles.actionButtonText}>Correção</Text></TouchableOpacity>}
             </View>
@@ -110,6 +126,15 @@ const DetailsScreen = () => {
                 onClose={() => setBaixaModalVisible(false)}
                 onConfirm={handleConfirmBaixa}
                 itemDetails={details}
+            />
+            {/* --- 6. RENDERIZE O NOVO MODAL --- */}
+            <TransferModal
+                visible={isTransferModalVisible}
+                onClose={() => setTransferModalVisible(false)}
+                onConfirm={handleConfirmTransfer}
+                itemDetails={details}
+                warehouses={warehouses}
+                permissions={permissions}
             />
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>

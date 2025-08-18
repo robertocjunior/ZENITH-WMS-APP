@@ -8,11 +8,10 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [userSession, setUserSession] = useState(null);
     const [permissions, setPermissions] = useState(null);
+    const [warehouses, setWarehouses] = useState([]); // <-- 1. Adicione o estado para os armazéns
     const [isLoading, setIsLoading] = useState(true);
-    // --- 1. ESTADO PARA CONTROLAR O ERRO ---
     const [apiError, setApiError] = useState(null);
 
-    // ... (useEffect e outras funções)
     useEffect(() => {
         const checkLogin = async () => {
             try {
@@ -20,8 +19,10 @@ export const AuthProvider = ({ children }) => {
                 const session = await AsyncStorage.getItem('userSession');
                 if (token && session) {
                     setUserSession(JSON.parse(session));
-                    const perms = await api.fetchPermissions();
+                    // Carrega permissões e armazéns ao iniciar
+                    const [perms, whs] = await Promise.all([api.fetchPermissions(), api.fetchWarehouses()]);
                     setPermissions(perms);
+                    setWarehouses(whs);
                 }
             } catch (e) {
                 console.error("Falha ao verificar sessão:", e);
@@ -38,8 +39,10 @@ export const AuthProvider = ({ children }) => {
         setUserSession(response);
         await AsyncStorage.setItem('userSession', JSON.stringify(response));
 
-        const perms = await api.fetchPermissions();
+        // Carrega permissões e armazéns após o login
+        const [perms, whs] = await Promise.all([api.fetchPermissions(), api.fetchWarehouses()]);
         setPermissions(perms);
+        setWarehouses(whs);
     };
 
     const logout = async () => {
@@ -50,6 +53,7 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setUserSession(null);
             setPermissions(null);
+            setWarehouses([]); // Limpa os armazéns no logout
             await AsyncStorage.removeItem('sessionToken');
             await AsyncStorage.removeItem('userSession');
         }
@@ -70,7 +74,6 @@ export const AuthProvider = ({ children }) => {
         if (error.message === '401') {
             logout();
         } else {
-            // --- 2. MOSTRA O ERRO EM VEZ DE SÓ FAZER LOGOUT ---
             setApiError(error.message);
         }
     };
@@ -78,10 +81,11 @@ export const AuthProvider = ({ children }) => {
     const value = {
         userSession,
         permissions,
+        warehouses, // <-- 2. Exponha os armazéns
         isLoading,
         isAuthenticated: !!userSession,
-        apiError, // <-- 3. Expõe o erro
-        clearApiError: () => setApiError(null), // <-- 3. Expõe função para limpar o erro
+        apiError,
+        clearApiError: () => setApiError(null),
         login,
         logout,
         handleApiError,
