@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
 import { formatData } from '../utils/formatter';
 import LoadingOverlay from '../components/common/LoadingOverlay';
-import BaixaModal from '../components/modals/BaixaModal'; // <-- 1. Importe o novo modal
+import BaixaModal from '../components/modals/BaixaModal';
 
 const DetailItem = ({ label, value }) => (
     <View style={styles.detailItem}>
@@ -23,11 +23,12 @@ const DetailsScreen = () => {
     const navigation = useNavigation();
     const { permissions, handleApiError, refreshPermissions } = useAuth();
     
-    const { sequencia, codArm } = route.params;
+    // --- 1. RECEBE O FILTRO ORIGINAL DA BUSCA ---
+    const { sequencia, codArm, filter } = route.params;
 
     const [loading, setLoading] = useState(true);
     const [details, setDetails] = useState(null);
-    const [isBaixaModalVisible, setBaixaModalVisible] = useState(false); // <-- 2. Estado para controlar o modal
+    const [isBaixaModalVisible, setBaixaModalVisible] = useState(false);
 
     useEffect(() => {
         const loadScreenData = async () => {
@@ -53,7 +54,6 @@ const DetailsScreen = () => {
         loadScreenData();
     }, [codArm, sequencia]);
     
-    // --- 3. FUNÇÃO PARA CONFIRMAR A BAIXA ---
     const handleConfirmBaixa = async (quantity) => {
         setBaixaModalVisible(false);
         setLoading(true);
@@ -65,9 +65,16 @@ const DetailsScreen = () => {
             };
             const result = await api.executeTransaction('baixa', payload);
             Alert.alert("Sucesso", result.message || "Baixa realizada com sucesso!");
-            navigation.goBack();
+            
+            // --- 2. ENVIA OS CRITÉRIOS DE BUSCA DE VOLTA ---
+            navigation.navigate('Main', {
+                refresh: true,
+                warehouseValue: details.codarm,
+                filter: filter // Envia o filtro original de volta
+            });
+
         } catch (error) {
-            handleApiError(error); // <-- Chama o handler do contexto, que vai ativar o ErrorModal
+            handleApiError(error);
         } finally {
             setLoading(false);
         }
@@ -84,7 +91,6 @@ const DetailsScreen = () => {
 
         return (
             <View style={styles.actionsFooter}>
-                {/* --- 4. AÇÃO onPress ATUALIZADA --- */}
                 {showBaixa && <TouchableOpacity style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></TouchableOpacity>}
                 {permissions.transfer && <TouchableOpacity style={[styles.actionButton, styles.btnTransferir]}><Text style={styles.actionButtonText}>Transferir</Text></TouchableOpacity>}
                 {showPicking && <TouchableOpacity style={[styles.actionButton, styles.btnPicking]}><Text style={styles.actionButtonText}>Picking</Text></TouchableOpacity>}

@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import * as api from '../api';
 import { COLORS, SIZES } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import * as SystemUI from 'expo-system-ui';
 import DropDownPicker from 'react-native-dropdown-picker';
 import LoadingOverlay from '../components/common/LoadingOverlay';
@@ -14,6 +14,7 @@ import ProfilePanel from '../components/ProfilePanel';
 
 const MainScreen = ({ navigation }) => {
     const { logout, handleApiError } = useAuth();
+    const route = useRoute();
     
     const [open, setOpen] = useState(false);
     const [warehouseValue, setWarehouseValue] = useState(null);
@@ -25,13 +26,51 @@ const MainScreen = ({ navigation }) => {
     const [initialLoading, setInitialLoading] = useState(true);
     const [isPanelVisible, setPanelVisible] = useState(false);
 
+    // --- 1. FUNÇÃO DE BUSCA MODIFICADA PARA ACEITAR PARÂMETROS ---
+    const handleSearch = async (searchWarehouse, searchFilter) => {
+        const wh = searchWarehouse || warehouseValue;
+        const ft = searchFilter !== undefined ? searchFilter : filter;
+
+        Keyboard.dismiss();
+        if (!wh) {
+            if (route.params?.refresh) return;
+            Alert.alert("Atenção", "Selecione um armazém para buscar.");
+            return;
+        }
+        setLoading(true);
+        try {
+            const result = await api.searchItems(String(wh), ft);
+            setItems(result);
+        } catch (error) {
+            handleApiError(error);
+            Alert.alert("Erro na Busca", error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useFocusEffect(
         useCallback(() => {
             const setSystemUIColor = async () => {
                 await SystemUI.setBackgroundColorAsync(COLORS.background);
             };
             setSystemUIColor();
-        }, [])
+
+            // --- 2. LÓGICA DE ATUALIZAÇÃO ---
+            if (route.params?.refresh) {
+                const { warehouseValue: refreshWh, filter: refreshFt } = route.params;
+                
+                // Atualiza a UI para refletir os critérios da busca
+                setWarehouseValue(refreshWh);
+                setFilter(refreshFt);
+                
+                // Executa a busca com os critérios recebidos
+                handleSearch(refreshWh, refreshFt);
+                
+                // Limpa o parâmetro para evitar re-buscas
+                navigation.setParams({ refresh: false });
+            }
+        }, [route.params?.refresh])
     );
 
     useEffect(() => {
@@ -52,27 +91,10 @@ const MainScreen = ({ navigation }) => {
         };
         loadInitialData();
     }, []);
-
-    const handleSearch = async () => {
-        Keyboard.dismiss();
-        if (!warehouseValue) {
-            Alert.alert("Atenção", "Selecione um armazém para buscar.");
-            return;
-        }
-        setLoading(true);
-        try {
-            const result = await api.searchItems(String(warehouseValue), filter);
-            setItems(result);
-        } catch (error) {
-            handleApiError(error);
-            Alert.alert("Erro na Busca", error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
     
+    // --- 3. PASSANDO O FILTRO PARA A TELA DE DETALHES ---
     const handleShowDetails = (sequencia) => {
-        navigation.navigate('Details', { sequencia, codArm: warehouseValue });
+        navigation.navigate('Details', { sequencia, codArm: warehouseValue, filter: filter });
     };
     
     const handleNavigateToHistory = () => {
@@ -102,7 +124,6 @@ const MainScreen = ({ navigation }) => {
 
             <View style={styles.header}>
                 <View style={styles.topHeaderRow}>
-                    {/* --- 1. Adicionado um <View> em volta do DropDownPicker --- */}
                     <View style={styles.pickerWrapper}>
                         <DropDownPicker
                             open={open}
@@ -112,9 +133,9 @@ const MainScreen = ({ navigation }) => {
                             setValue={setWarehouseValue}
                             setItems={setWarehouseItems}
                             placeholder="Selecione um Armazém"
-                            style={styles.dropdownPicker} // Estilo do picker interno
-                            containerStyle={styles.dropdownContainer} // Estilo do container do picker
-                            dropDownContainerStyle={styles.dropdownList} // Estilo da lista que abre
+                            style={styles.dropdownPicker}
+                            containerStyle={styles.dropdownContainer}
+                            dropDownContainerStyle={styles.dropdownList}
                             zIndex={3000}
                             zIndexInverse={1000}
                         />
@@ -131,10 +152,10 @@ const MainScreen = ({ navigation }) => {
                             placeholder="Buscar..."
                             value={filter}
                             onChangeText={setFilter}
-                            onSubmitEditing={handleSearch}
+                            onSubmitEditing={() => handleSearch()} // Chamada sem parâmetros
                         />
                     </View>
-                    <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+                    <TouchableOpacity style={styles.searchButton} onPress={() => handleSearch()}>
                         <Text style={styles.searchButtonText}>Buscar</Text>
                     </TouchableOpacity>
                 </View>
@@ -156,7 +177,7 @@ const MainScreen = ({ navigation }) => {
         </View>
     );
 };
-
+// ... Seus estilos permanecem os mesmos
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
     header: {
@@ -170,14 +191,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SIZES.padding,
     },
-    // --- 2. Novos estilos e modificações ---
     pickerWrapper: {
         flex: 1,
         marginRight: 10,
         borderRadius: SIZES.radius,
         borderWidth: 1,
-        borderColor: COLORS.border, // Borda fica neste container
-        backgroundColor: COLORS.white, // Fundo branco fica aqui
+        borderColor: COLORS.border,
+        backgroundColor: COLORS.white,
         height: 48,
         justifyContent: 'center',
     },
@@ -185,13 +205,12 @@ const styles = StyleSheet.create({
         height: 48,
     },
     dropdownPicker: {
-        borderWidth: 0, // Remove a borda do componente interno
-        backgroundColor: 'transparent', // Remove o fundo do componente interno
+        borderWidth: 0,
+        backgroundColor: 'transparent',
     },
     dropdownList: {
         borderColor: COLORS.border,
     },
-    // ------------------------------------
     profileButton: {
         padding: 5,
     },
