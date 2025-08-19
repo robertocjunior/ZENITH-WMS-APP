@@ -1,3 +1,4 @@
+// app.json
 {
   "expo": {
     "name": "ZENITH-WMS-APP",
@@ -5,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -22,7 +23,8 @@
         "foregroundImage": "./assets/adaptive-icon-foreground.png",
         "backgroundImage": "./assets/adaptive-icon-background.png"
       },
-      "package": "com.robertocjunior.zenithwms"
+      "package": "com.robertocjunior.zenithwms",
+      "userInterfaceStyle": "automatic"
     }
   }
 }
