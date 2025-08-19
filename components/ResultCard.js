@@ -1,8 +1,9 @@
 // components/ResultCard.js
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, SIZES } from '../constants/theme';
 import { formatData } from '../utils/formatter';
+import AnimatedButton from './common/AnimatedButton';
 
 const ResultCard = ({ item, onPress }) => {
     const [sequencia, rua, predio, , codprod, descrprod, marca, datval, , endpic, qtdCompleta, derivacao] = item;
@@ -12,7 +13,7 @@ const ResultCard = ({ item, onPress }) => {
     if (derivacao) displayDesc += ` - ${derivacao}`;
 
     return (
-        <TouchableOpacity 
+        <AnimatedButton 
             style={[styles.card, endpic === 'S' && styles.pickingCard]}
             onPress={() => onPress(sequencia)}
         >
@@ -29,7 +30,7 @@ const ResultCard = ({ item, onPress }) => {
                 <Text style={styles.textLight}>Qtd: <Text style={styles.bold}>{qtdCompleta}</Text></Text>
                 <Text style={styles.textLight}>Val: <Text style={styles.validity}>{formatData(datval)}</Text></Text>
             </View>
-        </TouchableOpacity>
+        </AnimatedButton>
     );
 };
 
@@ -41,6 +42,7 @@ const styles = StyleSheet.create({
         marginBottom: SIZES.padding,
         borderWidth: 1,
         borderColor: COLORS.border,
+        alignItems: 'stretch', // Garante que o conteúdo interno se alinhe corretamente
     },
     pickingCard: {
         backgroundColor: COLORS.pickingBackground,
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: COLORS.text,
     },
-    productCode: { // <-- ALTERAÇÕES AQUI
+    productCode: {
         backgroundColor: COLORS.inputBackground,
         color: COLORS.textLight,
         paddingVertical: 3,

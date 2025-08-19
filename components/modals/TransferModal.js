@@ -1,9 +1,10 @@
 // components/modals/TransferModal.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, TouchableOpacity, Keyboard } from 'react-native';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedButton from '../common/AnimatedButton';
 
 const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = [], permissions = {} }) => {
     const [quantity, setQuantity] = useState('');
@@ -58,7 +59,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
             visible={visible}
             onRequestClose={onClose}
         >
-            <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={Keyboard.dismiss}>
+            <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
                 <View style={styles.modalContent}>
                     <Text style={styles.title}>Transferir Produto</Text>
                     <Text style={styles.infoText}>
@@ -90,22 +91,22 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
                     <TextInput style={styles.input} value={destinationAddress} onChangeText={setDestinationAddress} keyboardType="numeric" placeholder="Digite o endereço" placeholderTextColor={COLORS.textLight} />
 
                     {permissions.criaPick && (
-                        <TouchableOpacity style={styles.checkboxContainer} onPress={() => setMarkedAsPicking(!isMarkedAsPicking)}>
+                        <AnimatedButton style={styles.checkboxContainer} onPress={() => setMarkedAsPicking(!isMarkedAsPicking)}>
                             <Ionicons name={isMarkedAsPicking ? 'checkbox' : 'square-outline'} size={24} color={COLORS.primary} />
                             <Text style={styles.checkboxLabel}>Marcar destino como Picking</Text>
-                        </TouchableOpacity>
+                        </AnimatedButton>
                     )}
 
                     <View style={styles.buttonRow}>
-                        <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+                        <AnimatedButton style={[styles.button, styles.cancelButton]} onPress={onClose}>
                             <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
+                        </AnimatedButton>
+                        <AnimatedButton style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
                             <Text style={styles.confirmButtonText}>Confirmar</Text>
-                        </TouchableOpacity>
+                        </AnimatedButton>
                     </View>
                 </View>
-            </TouchableOpacity>
+            </Pressable>
         </Modal>
     );
 };
@@ -128,7 +129,7 @@ const styles = StyleSheet.create({
     title: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 10, },
     infoText: { fontSize: 16, color: COLORS.textLight, marginBottom: 20, },
     label: { fontSize: 14, color: COLORS.textLight, marginBottom: 5, },
-    input: { // <-- ALTERAÇÕES AQUI
+    input: {
         width: '100%', 
         padding: 12, 
         fontSize: 16, 
@@ -140,16 +141,16 @@ const styles = StyleSheet.create({
         color: COLORS.text,
     },
     dropdownContainer: { marginBottom: 15 },
-    dropdownPicker: { // <-- ALTERAÇÕES AQUI
+    dropdownPicker: {
         borderColor: COLORS.border,
         backgroundColor: COLORS.inputBackground,
     },
     dropdownList: { borderColor: COLORS.border },
-    checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, gap: 10 },
+    checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, gap: 10, alignSelf: 'flex-start'},
     checkboxLabel: { fontSize: 16, color: COLORS.text },
     buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
-    cancelButton: { // <-- ALTERAÇÕES AQUI
+    cancelButton: {
         backgroundColor: COLORS.buttonSecondaryBackground, 
     },
     cancelButtonText: { color: COLORS.text, fontSize: 16, fontWeight: '500', },

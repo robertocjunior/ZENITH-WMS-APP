@@ -1,7 +1,8 @@
 // components/modals/BaixaModal.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, TouchableOpacity, Keyboard } from 'react-native';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
+import AnimatedButton from '../common/AnimatedButton';
 
 const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     const [quantity, setQuantity] = useState('');
@@ -30,7 +31,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
             visible={visible}
             onRequestClose={onClose}
         >
-            <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={Keyboard.dismiss}>
+            <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
                 <View style={styles.modalContent}>
                     <Text style={styles.title}>Dar Baixa no Produto</Text>
                     <Text style={styles.infoText}>
@@ -49,15 +50,15 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                     />
 
                     <View style={styles.buttonRow}>
-                        <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+                        <AnimatedButton style={[styles.button, styles.cancelButton]} onPress={onClose}>
                             <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
+                        </AnimatedButton>
+                        <AnimatedButton style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
                             <Text style={styles.confirmButtonText}>Confirmar</Text>
-                        </TouchableOpacity>
+                        </AnimatedButton>
                     </View>
                 </View>
-            </TouchableOpacity>
+            </Pressable>
         </Modal>
     );
 };
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
         color: COLORS.textLight,
         marginBottom: 5,
     },
-    input: { // <-- ALTERAÇÕES AQUI
+    input: {
         width: '100%',
         padding: 12,
         fontSize: 16,
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 25,
         borderRadius: SIZES.radius,
     },
-    cancelButton: { // <-- ALTERAÇÕES AQUI
+    cancelButton: {
         backgroundColor: COLORS.buttonSecondaryBackground,
     },
     cancelButtonText: {

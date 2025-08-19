@@ -1,6 +1,6 @@
 // screens/HistoryScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
 import * as SystemUI from 'expo-system-ui';
 import HistoryCard from '../components/HistoryCard';
+import AnimatedButton from '../components/common/AnimatedButton';
 
 const HistoryScreen = () => {
     const navigation = useNavigation();
@@ -44,10 +45,10 @@ const HistoryScreen = () => {
         return (
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                    <AnimatedButton style={styles.backButton} onPress={() => navigation.goBack()}>
                         <Ionicons name="arrow-back" size={24} color={COLORS.white} />
                         <Text style={styles.headerBackText}>Voltar</Text>
-                    </TouchableOpacity>
+                    </AnimatedButton>
                     <Text style={styles.headerMainTitle}>Histórico de Hoje</Text>
                 </View>
                 <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
@@ -58,10 +59,10 @@ const HistoryScreen = () => {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <AnimatedButton style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.white} />
                     <Text style={styles.headerBackText}>Voltar</Text>
-                </TouchableOpacity>
+                </AnimatedButton>
                 <Text style={styles.headerMainTitle}>Histórico de Hoje</Text>
             </View>
 
@@ -100,6 +101,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         zIndex: 1, 
+        paddingRight: 10,
     },
     headerBackText: {
         color: COLORS.white,

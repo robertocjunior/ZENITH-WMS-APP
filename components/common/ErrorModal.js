@@ -1,8 +1,9 @@
 // components/common/ErrorModal.js
 import React from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Modal, StyleSheet } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedButton from './AnimatedButton';
 
 const ErrorModal = ({ visible, errorMessage, onClose }) => {
     return (
@@ -17,9 +18,9 @@ const ErrorModal = ({ visible, errorMessage, onClose }) => {
                     <Ionicons name="warning-outline" size={48} color={COLORS.danger} style={styles.icon} />
                     <Text style={styles.title}>Ocorreu um Erro</Text>
                     <Text style={styles.message}>{errorMessage}</Text>
-                    <TouchableOpacity style={styles.button} onPress={onClose}>
+                    <AnimatedButton style={styles.button} onPress={onClose}>
                         <Text style={styles.buttonText}>Fechar</Text>
-                    </TouchableOpacity>
+                    </AnimatedButton>
                 </View>
             </View>
         </Modal>
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxWidth: 400,
-        backgroundColor: COLORS.cardBackground, // <-- COR DO TEMA
+        backgroundColor: COLORS.cardBackground,
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
         alignItems: 'center',
@@ -48,12 +49,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: COLORS.text, // <-- COR DO TEMA
+        color: COLORS.text,
         marginBottom: 10,
     },
     message: {
         fontSize: 16,
-        color: COLORS.textLight, // <-- COR DO TEMA
+        color: COLORS.textLight,
         textAlign: 'center',
         marginBottom: 25,
     },

@@ -16,6 +16,7 @@ const lightColors = {
     buttonSecondaryBackground: '#e0e0e0',
     white: '#ffffff',
     black: '#000000',
+    headerIcon: '#ffffff',
     success: '#28a745',
     info: '#007bff',
     warning: '#ffc107',
@@ -44,6 +45,8 @@ const darkColors = {
     buttonSecondaryBackground: '#444444', // Fundo para botões secundários (ex: Cancelar)
     white: '#ffffff',
     black: '#000000',
+    headerIcon: '#f0f0f0',
+    //headerIcon: '#333333',
     success: '#28a745',
     info: '#007bff',
     warning: '#ffc107',

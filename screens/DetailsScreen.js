@@ -1,9 +1,8 @@
 // screens/DetailsScreen.js
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-
 import * as api from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
@@ -13,6 +12,7 @@ import BaixaModal from '../components/modals/BaixaModal';
 import TransferModal from '../components/modals/TransferModal';
 import PickingModal from '../components/modals/PickingModal';
 import CorrecaoModal from '../components/modals/CorrecaoModal';
+import AnimatedButton from '../components/common/AnimatedButton';
 
 const DetailItem = ({ label, value }) => (
     <View style={styles.detailItem}>
@@ -149,10 +149,10 @@ const DetailsScreen = () => {
 
         return (
             <View style={styles.actionsFooter}>
-                {showBaixa && <TouchableOpacity style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></TouchableOpacity>}
-                {permissions.transfer && <TouchableOpacity style={[styles.actionButton, styles.btnTransferir]} onPress={() => setTransferModalVisible(true)}><Text style={styles.actionButtonText}>Transferir</Text></TouchableOpacity>}
-                {showPicking && <TouchableOpacity style={[styles.actionButton, styles.btnPicking]} onPress={() => setPickingModalVisible(true)}><Text style={styles.actionButtonText}>Picking</Text></TouchableOpacity>}
-                {permissions.corre && <TouchableOpacity style={[styles.actionButton, styles.btnCorrecao]} onPress={() => setCorrecaoModalVisible(true)}><Text style={styles.actionButtonText}>Correção</Text></TouchableOpacity>}
+                {showBaixa && <AnimatedButton style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></AnimatedButton>}
+                {permissions.transfer && <AnimatedButton style={[styles.actionButton, styles.btnTransferir]} onPress={() => setTransferModalVisible(true)}><Text style={styles.actionButtonText}>Transferir</Text></AnimatedButton>}
+                {showPicking && <AnimatedButton style={[styles.actionButton, styles.btnPicking]} onPress={() => setPickingModalVisible(true)}><Text style={styles.actionButtonText}>Picking</Text></AnimatedButton>}
+                {permissions.corre && <AnimatedButton style={[styles.actionButton, styles.btnCorrecao]} onPress={() => setCorrecaoModalVisible(true)}><Text style={styles.actionButtonText}>Correção</Text></AnimatedButton>}
             </View>
         );
     };
@@ -191,10 +191,10 @@ const DetailsScreen = () => {
             />
             
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <AnimatedButton style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.white} />
                     <Text style={styles.headerBackText}>Voltar</Text>
-                </TouchableOpacity>
+                </AnimatedButton>
                 <Text style={styles.headerMainTitle}>Detalhes</Text>
             </View>
 
@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         zIndex: 1, 
+        paddingRight: 10,
     },
     headerBackText: {
         color: COLORS.white,

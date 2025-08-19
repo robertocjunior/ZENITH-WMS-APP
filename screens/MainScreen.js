@@ -1,6 +1,6 @@
 // screens/MainScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, Alert, ActivityIndicator, Keyboard } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../api';
 import { COLORS, SIZES } from '../constants/theme';
@@ -11,6 +11,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import ResultCard from '../components/ResultCard';
 import ProfilePanel from '../components/ProfilePanel';
+import AnimatedButton from '../components/common/AnimatedButton';
 
 const MainScreen = ({ navigation }) => {
     const { logout, handleApiError } = useAuth();
@@ -98,7 +99,6 @@ const MainScreen = ({ navigation }) => {
         logout();
     };
 
-
     if (initialLoading) {
         return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
     }
@@ -126,16 +126,17 @@ const MainScreen = ({ navigation }) => {
                             placeholder="Selecione um Armazém"
                             style={styles.dropdownPicker}
                             containerStyle={styles.dropdownContainer}
-                            dropDownContainerStyle={[styles.dropdownList, { backgroundColor: COLORS.cardBackground }]} // <-- COR DE FUNDO DA LISTA
-                            textStyle={{ color: COLORS.text }} // <-- COR DO TEXTO NO SELETOR
-                            listItemLabelStyle={{ color: COLORS.text }} // <-- COR DO TEXTO NOS ITENS DA LISTA
+                            dropDownContainerStyle={[styles.dropdownList, { backgroundColor: COLORS.cardBackground }]}
+                            textStyle={{ color: COLORS.text }}
+                            listItemLabelStyle={{ color: COLORS.text }}
                             zIndex={3000}
                             zIndexInverse={1000}
                         />
                     </View>
-                    <TouchableOpacity style={styles.profileButton} onPress={() => setPanelVisible(true)}>
-                        <Ionicons name="person-circle-outline" size={32} color={COLORS.white} />
-                    </TouchableOpacity>
+                    <AnimatedButton style={styles.profileButton} onPress={() => setPanelVisible(true)}>
+                        {/* AQUI A COR FOI ALTERADA */}
+                        <Ionicons name="person-circle-outline" size={32} color={COLORS.headerIcon} />
+                    </AnimatedButton>
                 </View>
                 <View style={styles.searchBar}>
                     <View style={styles.searchInputWrapper}>
@@ -143,15 +144,15 @@ const MainScreen = ({ navigation }) => {
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Buscar..."
-                            placeholderTextColor={COLORS.textLight} // <-- COR DO PLACEHOLDER
+                            placeholderTextColor={COLORS.textLight}
                             value={filter}
                             onChangeText={setFilter}
                             onSubmitEditing={() => handleSearch()}
                         />
                     </View>
-                    <TouchableOpacity style={styles.searchButton} onPress={() => handleSearch()}>
+                    <AnimatedButton style={styles.searchButton} onPress={() => handleSearch()}>
                         <Text style={styles.searchButtonText}>Buscar</Text>
-                    </TouchableOpacity>
+                    </AnimatedButton>
                 </View>
             </View>
 
@@ -185,13 +186,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SIZES.padding,
     },
-    pickerWrapper: { // <-- ALTERAÇÕES AQUI
+    pickerWrapper: {
         flex: 1,
         marginRight: 10,
         borderRadius: SIZES.radius,
         borderWidth: 1,
         borderColor: COLORS.border,
-        backgroundColor: COLORS.inputBackground, // Fundo dinâmico
+        backgroundColor: COLORS.inputBackground,
         height: 48,
         justifyContent: 'center',
     },
@@ -213,19 +214,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
-    searchInputWrapper: { // <-- ALTERAÇÕES AQUI
+    searchInputWrapper: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.inputBackground, // Fundo dinâmico
+        backgroundColor: COLORS.inputBackground,
         borderRadius: SIZES.radius,
         height: 48,
     },
-    searchInput: { // <-- ALTERAÇÕES AQUI
+    searchInput: {
         flex: 1,
         paddingHorizontal: SIZES.padding / 2,
         fontSize: 16,
-        color: COLORS.text, // Cor do texto dinâmica
+        color: COLORS.text,
     },
     searchButton: {
         backgroundColor: COLORS.secondary,

@@ -1,6 +1,6 @@
 // screens/LoginScreen.js
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator, KeyboardAvoidingView, ScrollView, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { View, Text, TextInput, StyleSheet, Image, Alert, ActivityIndicator, TouchableWithoutFeedback, Keyboard, Platform, Animated } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as SystemUI from 'expo-system-ui';
 import SettingsModal from '../components/modals/SettingsModal';
 import { initializeApiUrl, setApiUrl } from '../api';
+import AnimatedButton from '../components/common/AnimatedButton';
 
 const LoginScreen = () => {
     const [username, setUsername] = useState('');
@@ -18,6 +19,35 @@ const LoginScreen = () => {
     
     const [isSettingsVisible, setSettingsVisible] = useState(false);
     const [currentApiUrl, setCurrentApiUrl] = useState('');
+    const keyboardHeightAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            (e) => {
+                Animated.timing(keyboardHeightAnim, {
+                    toValue: e.endCoordinates.height,
+                    duration: 250,
+                    useNativeDriver: false,
+                }).start();
+            }
+        );
+        const keyboardDidHideListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => {
+                Animated.timing(keyboardHeightAnim, {
+                    toValue: 0,
+                    duration: 200,
+                    useNativeDriver: false,
+                }).start();
+            }
+        );
+
+        return () => {
+            keyboardDidHideListener.remove();
+            keyboardDidShowListener.remove();
+        };
+    }, [keyboardHeightAnim]);
 
     useEffect(() => {
         const loadUrl = async () => {
@@ -59,27 +89,28 @@ const LoginScreen = () => {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
-        >
+        <View style={styles.mainContainer}>
             <SettingsModal
                 visible={isSettingsVisible}
                 onClose={() => setSettingsVisible(false)}
                 onSave={handleSaveSettings}
                 currentApiUrl={currentApiUrl}
             />
+            
+            {/* Camada de Fundo: Botão de Configurações */}
+            <View style={styles.headerContainer}>
+                <AnimatedButton style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
+                    <Ionicons name="settings-outline" size={28} color={COLORS.headerIcon} />
+                </AnimatedButton>
+            </View>
 
-            <TouchableOpacity style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
-                <Ionicons name="settings-outline" size={28} color={COLORS.white} />
-            </TouchableOpacity>
-
+            {/* Camada da Frente: Formulário de Login Animado */}
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <Animated.View style={[styles.centeringContainer, { paddingBottom: keyboardHeightAnim }]}>
                     <View style={styles.loginContainer}>
                         <View style={styles.logoContainer}>
-                            <Image source={require('../assets/icons/icon512x512transparent.png')} style={styles.logoIcon} />
-                            <Image source={require('../assets/icons/name-transparent.png')} style={styles.logoName} />
+                            <Image source={require('../assets/icons/icon512x512.png')} style={styles.logoIcon} />
+                            <Image source={require('../assets/icons/name.png')} style={styles.logoName} />
                         </View>
                         <Text style={styles.subtitle}>Faça login com seu usuário e senha do Sankhya.</Text>
 
@@ -89,32 +120,62 @@ const LoginScreen = () => {
                         <Text style={styles.label}>Senha</Text>
                         <View style={styles.passwordContainer}>
                             <TextInput style={styles.passwordInput} value={password} onChangeText={setPassword} secureTextEntry={!isPasswordVisible} autoCapitalize="none" autoCompleteType="password" />
-                            <TouchableOpacity style={styles.eyeIcon} onPress={() => setPasswordVisible(!isPasswordVisible)}>
+                            <AnimatedButton style={styles.eyeIcon} onPress={() => setPasswordVisible(!isPasswordVisible)}>
                                 <Ionicons name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} size={24} color={COLORS.textLight} />
-                            </TouchableOpacity>
+                            </AnimatedButton>
                         </View>
                         
-                        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+                        <AnimatedButton style={styles.button} onPress={handleLogin} disabled={loading}>
                             {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
-                        </TouchableOpacity>
+                        </AnimatedButton>
                     </View>
-                </ScrollView>
+                </Animated.View>
             </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.primary, },
-    settingsButton: { position: 'absolute', top: 45, right: 20, zIndex: 10, padding: 10 },
-    scrollContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20, },
-    loginContainer: { backgroundColor: COLORS.cardBackground, padding: 40, borderRadius: 12, width: '100%', maxWidth: 400, },
-    logoContainer: { alignItems: 'center', marginBottom: 30, backgroundColor: COLORS.iconLogin, borderRadius: 12, paddingLeft: 5, paddingRight: 5, },
+    mainContainer: {
+        flex: 1,
+        backgroundColor: COLORS.primary,
+    },
+    headerContainer: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    settingsButton: { 
+        position: 'absolute', 
+        top: 45, 
+        right: 20, 
+        padding: 10 
+    },
+    centeringContainer: { 
+        flex: 1, 
+        justifyContent: 'center',
+        alignItems: 'center', 
+        paddingHorizontal: 20,
+        pointerEvents: 'box-none', // <-- MUDANÇA 1: Deixa cliques "atravessarem" esta view
+    },
+    loginContainer: { 
+        backgroundColor: COLORS.cardBackground, 
+        padding: 40, 
+        borderRadius: 12, 
+        width: '100%', 
+        maxWidth: 400,
+        pointerEvents: 'auto', // <-- MUDANÇA 2: Garante que o formulário e seus filhos recebam cliques
+    },
+    logoContainer: { 
+        alignItems: 'center', 
+        marginBottom: 30,
+        borderRadius: 12, 
+        paddingLeft: 5, 
+        paddingRight: 5, 
+    },
     logoIcon: { width: 80, height: 80, resizeMode: 'contain', marginBottom: 15, },
     logoName: { width: 150, height: 40, resizeMode: 'contain', },
     subtitle: { textAlign: 'center', marginBottom: 30, color: COLORS.textLight, },
     label: { color: COLORS.textLight, marginBottom: 5, fontSize: SIZES.body, },
-    input: { // <-- ALTERAÇÕES AQUI
+    input: {
         width: '100%', 
         padding: 12, 
         fontSize: 16, 
@@ -122,10 +183,10 @@ const styles = StyleSheet.create({
         borderWidth: 1, 
         borderColor: COLORS.border, 
         marginBottom: 20,
-        backgroundColor: COLORS.inputBackground, // Fundo dinâmico
-        color: COLORS.text, // Cor do texto dinâmica
+        backgroundColor: COLORS.inputBackground,
+        color: COLORS.text,
     },
-    passwordContainer: { // <-- ALTERAÇÕES AQUI
+    passwordContainer: {
         flexDirection: 'row', 
         alignItems: 'center', 
         width: '100%', 
@@ -133,13 +194,13 @@ const styles = StyleSheet.create({
         borderWidth: 1, 
         borderColor: COLORS.border, 
         marginBottom: 20,
-        backgroundColor: COLORS.inputBackground, // Fundo dinâmico
+        backgroundColor: COLORS.inputBackground,
     },
-    passwordInput: { // <-- ALTERAÇÕES AQUI
+    passwordInput: {
         flex: 1, 
         padding: 12, 
         fontSize: 16,
-        color: COLORS.text, // Cor do texto dinâmica
+        color: COLORS.text,
     },
     eyeIcon: { padding: 10, },
     button: { width: '100%', padding: 15, backgroundColor: COLORS.primary, borderRadius: 8, alignItems: 'center', marginTop: 15, },

@@ -1,7 +1,8 @@
 // components/modals/SettingsModal.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, TouchableOpacity, Keyboard, Alert } from 'react-native';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Alert, Pressable } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
+import AnimatedButton from '../common/AnimatedButton';
 
 const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
     const [apiUrl, setApiUrl] = useState('');
@@ -28,7 +29,7 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
             visible={visible}
             onRequestClose={onClose}
         >
-            <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={Keyboard.dismiss}>
+            <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
                 <View style={styles.modalContent}>
                     <Text style={styles.title}>Configurações do Servidor</Text>
                     <Text style={styles.label}>Endereço da API do Backend:</Text>
@@ -44,15 +45,15 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
                     />
 
                     <View style={styles.buttonRow}>
-                        <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+                        <AnimatedButton style={[styles.button, styles.cancelButton]} onPress={onClose}>
                             <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={handleSave}>
+                        </AnimatedButton>
+                        <AnimatedButton style={[styles.button, styles.confirmButton]} onPress={handleSave}>
                             <Text style={styles.confirmButtonText}>Salvar</Text>
-                        </TouchableOpacity>
+                        </AnimatedButton>
                     </View>
                 </View>
-            </TouchableOpacity>
+            </Pressable>
         </Modal>
     );
 };
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
     },
     title: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 20, },
     label: { fontSize: 14, color: COLORS.textLight, marginBottom: 5, },
-    input: { // <-- ALTERAÇÕES AQUI
+    input: {
         width: '100%', 
         padding: 12, 
         fontSize: 16, 
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     },
     buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
-    cancelButton: { // <-- ALTERAÇÕES AQUI
+    cancelButton: {
         backgroundColor: COLORS.buttonSecondaryBackground, 
     },
     cancelButtonText: { color: COLORS.text, fontSize: 16, fontWeight: '500', },

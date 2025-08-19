@@ -1,9 +1,10 @@
 // components/ProfilePanel.js
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, Pressable, Animated, Dimensions } from 'react-native';
+import { View, Text, Modal, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants/theme';
+import AnimatedButton from './common/AnimatedButton';
 
 const { width } = Dimensions.get('window');
 
@@ -60,24 +61,24 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
                                         {userSession ? `${userSession.codusu} - ${userSession.username}` : ''}
                                     </Text>
                                 </View>
-                                <TouchableOpacity onPress={handleClose}>
+                                <AnimatedButton onPress={handleClose}>
                                     <Ionicons name="close" size={28} color={COLORS.textLight} />
-                                </TouchableOpacity>
+                                </AnimatedButton>
                             </View>
 
                             <View style={styles.panelBody}>
-                                <TouchableOpacity style={styles.panelButton} onPress={onNavigateToHistory}>
+                                <AnimatedButton style={styles.panelButton} onPress={onNavigateToHistory}>
                                     <Ionicons name="time-outline" size={22} color={COLORS.text} />
                                     <Text style={styles.panelButtonText}>Histórico de Operações</Text>
-                                </TouchableOpacity>
+                                </AnimatedButton>
                             </View>
                         </View>
 
                         <View style={styles.panelFooter}>
-                            <TouchableOpacity style={[styles.panelButton, styles.logoutButton]} onPress={onLogout}>
+                            <AnimatedButton style={[styles.panelButton, styles.logoutButton]} onPress={onLogout}>
                                 <Ionicons name="log-out-outline" size={22} color={COLORS.danger} />
                                 <Text style={[styles.panelButtonText, { color: COLORS.danger }]}>Sair</Text>
-                            </TouchableOpacity>
+                            </AnimatedButton>
                         </View>
                     </Pressable>
                 </Animated.View>
