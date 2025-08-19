@@ -10,7 +10,8 @@ import { COLORS, SIZES } from '../constants/theme';
 import { formatData } from '../utils/formatter';
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import BaixaModal from '../components/modals/BaixaModal';
-import TransferModal from '../components/modals/TransferModal'; // <-- 1. Importe o novo modal
+import TransferModal from '../components/modals/TransferModal';
+import PickingModal from '../components/modals/PickingModal'; // <-- 1. Importe o novo modal
 
 const DetailItem = ({ label, value }) => (
     <View style={styles.detailItem}>
@@ -22,7 +23,6 @@ const DetailItem = ({ label, value }) => (
 const DetailsScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
-    // --- 2. PEGUE warehouses DO CONTEXTO ---
     const { permissions, handleApiError, refreshPermissions, warehouses } = useAuth();
     
     const { sequencia, codArm, filter } = route.params;
@@ -30,7 +30,8 @@ const DetailsScreen = () => {
     const [loading, setLoading] = useState(true);
     const [details, setDetails] = useState(null);
     const [isBaixaModalVisible, setBaixaModalVisible] = useState(false);
-    const [isTransferModalVisible, setTransferModalVisible] = useState(false); // <-- 3. Estado para o modal
+    const [isTransferModalVisible, setTransferModalVisible] = useState(false);
+    const [isPickingModalVisible, setPickingModalVisible] = useState(false); // <-- 2. Estado para o modal
 
     useEffect(() => {
         const loadScreenData = async () => {
@@ -71,7 +72,6 @@ const DetailsScreen = () => {
         }
     };
 
-    // --- 4. FUNÇÃO PARA CONFIRMAR A TRANSFERÊNCIA ---
     const handleConfirmTransfer = async (transferData) => {
         setTransferModalVisible(false);
         setLoading(true);
@@ -95,6 +95,29 @@ const DetailsScreen = () => {
         }
     };
 
+    // --- 3. FUNÇÃO PARA CONFIRMAR O PICKING ---
+    const handleConfirmPicking = async (pickingData) => {
+        setPickingModalVisible(false);
+        setLoading(true);
+        try {
+            const payload = {
+                origem: details,
+                destino: {
+                    armazemDestino: details.codarm,
+                    enderecoDestino: pickingData.destinationSequence,
+                    quantidade: pickingData.quantity
+                }
+            };
+            const result = await api.executeTransaction('picking', payload);
+            Alert.alert("Sucesso", result.message || "Movido para picking com sucesso!");
+            navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const renderActionButtons = () => {
         if (!details || !permissions) return null;
 
@@ -107,9 +130,9 @@ const DetailsScreen = () => {
         return (
             <View style={styles.actionsFooter}>
                 {showBaixa && <TouchableOpacity style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></TouchableOpacity>}
-                {/* --- 5. AÇÃO onPress ATUALIZADA --- */}
                 {permissions.transfer && <TouchableOpacity style={[styles.actionButton, styles.btnTransferir]} onPress={() => setTransferModalVisible(true)}><Text style={styles.actionButtonText}>Transferir</Text></TouchableOpacity>}
-                {showPicking && <TouchableOpacity style={[styles.actionButton, styles.btnPicking]}><Text style={styles.actionButtonText}>Picking</Text></TouchableOpacity>}
+                {/* --- 4. AÇÃO onPress ATUALIZADA --- */}
+                {showPicking && <TouchableOpacity style={[styles.actionButton, styles.btnPicking]} onPress={() => setPickingModalVisible(true)}><Text style={styles.actionButtonText}>Picking</Text></TouchableOpacity>}
                 {permissions.corre && <TouchableOpacity style={[styles.actionButton, styles.btnCorrecao]}><Text style={styles.actionButtonText}>Correção</Text></TouchableOpacity>}
             </View>
         );
@@ -127,7 +150,6 @@ const DetailsScreen = () => {
                 onConfirm={handleConfirmBaixa}
                 itemDetails={details}
             />
-            {/* --- 6. RENDERIZE O NOVO MODAL --- */}
             <TransferModal
                 visible={isTransferModalVisible}
                 onClose={() => setTransferModalVisible(false)}
@@ -136,6 +158,14 @@ const DetailsScreen = () => {
                 warehouses={warehouses}
                 permissions={permissions}
             />
+            {/* --- 5. RENDERIZE O NOVO MODAL --- */}
+            <PickingModal
+                visible={isPickingModalVisible}
+                onClose={() => setPickingModalVisible(false)}
+                onConfirm={handleConfirmPicking}
+                itemDetails={details}
+            />
+            
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.white} />
