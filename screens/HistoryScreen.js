@@ -67,7 +67,7 @@ const HistoryScreen = () => {
 
             <FlatList
                 data={historyItems}
-                keyExtractor={(item, index) => `${item[13]}-${index}`} // Usa ID_OPERACAO + index como chave
+                keyExtractor={(item, index) => `${item[13]}-${index}`}
                 renderItem={({ item }) => <HistoryCard item={item} />}
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={() => (

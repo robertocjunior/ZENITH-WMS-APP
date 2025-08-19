@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 
 const HistoryCard = ({ item }) => {
-    // A estrutura do array 'item' é baseada no seu código web original
     const [tipo, , hora, codarm, seqend, armdes, enddes, codprod, descrprod, marca, derivacao, quantAnt, qtdAtual, idOperacao] = item;
 
     const isCorrection = tipo === 'CORRECAO';
@@ -37,8 +36,7 @@ const HistoryCard = ({ item }) => {
             );
         }
 
-        // Se for Operação (Baixa ou Transferência)
-        if (armdes && enddes) { // É uma Transferência
+        if (armdes && enddes) { // Transferência
             return (
                 <View style={styles.movementBox}>
                     <View style={styles.locationOriginDest}>
@@ -52,7 +50,7 @@ const HistoryCard = ({ item }) => {
                     </View>
                 </View>
             );
-        } else { // É uma Baixa
+        } else { // Baixa
             return (
                 <View style={styles.locationBox}>
                     <Text style={styles.locationLabel}>Local da Baixa</Text>
@@ -131,17 +129,18 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: COLORS.text,
     },
-    productCode: {
+    productCode: { // <-- ALTERAÇÕES AQUI
         fontSize: 12,
-        backgroundColor: '#e9ecef',
+        backgroundColor: COLORS.inputBackground,
         paddingVertical: 2,
         paddingHorizontal: 6,
         borderRadius: 4,
         marginTop: 5,
         color: COLORS.textLight,
+        overflow: 'hidden'
     },
-    locationBox: {
-        backgroundColor: 'rgba(0,0,0,0.04)',
+    locationBox: { // <-- ALTERAÇÕES AQUI
+        backgroundColor: COLORS.background,
         padding: SIZES.padding,
         borderRadius: SIZES.radius,
         alignItems: 'center',

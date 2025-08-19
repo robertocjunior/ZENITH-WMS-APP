@@ -7,7 +7,6 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     const [quantity, setQuantity] = useState('');
 
     useEffect(() => {
-        // Preenche a quantidade total quando o modal se torna visível
         if (visible && itemDetails) {
             setQuantity(String(itemDetails.quantidade || ''));
         }
@@ -45,6 +44,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                         onChangeText={setQuantity}
                         keyboardType="numeric"
                         placeholder="Digite a quantidade"
+                        placeholderTextColor={COLORS.textLight}
                         autoFocus={true}
                     />
 
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
         color: COLORS.textLight,
         marginBottom: 5,
     },
-    input: {
+    input: { // <-- ALTERAÇÕES AQUI
         width: '100%',
         padding: 12,
         fontSize: 16,
@@ -101,6 +101,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.border,
         marginBottom: 25,
+        backgroundColor: COLORS.inputBackground,
+        color: COLORS.text,
     },
     buttonRow: {
         flexDirection: 'row',
@@ -112,8 +114,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 25,
         borderRadius: SIZES.radius,
     },
-    cancelButton: {
-        backgroundColor: '#f0f2f5',
+    cancelButton: { // <-- ALTERAÇÕES AQUI
+        backgroundColor: COLORS.buttonSecondaryBackground,
     },
     cancelButtonText: {
         color: COLORS.text,

@@ -12,7 +12,7 @@ import LoadingOverlay from '../components/common/LoadingOverlay';
 import BaixaModal from '../components/modals/BaixaModal';
 import TransferModal from '../components/modals/TransferModal';
 import PickingModal from '../components/modals/PickingModal';
-import CorrecaoModal from '../components/modals/CorrecaoModal'; // <-- 1. Importe o novo modal
+import CorrecaoModal from '../components/modals/CorrecaoModal';
 
 const DetailItem = ({ label, value }) => (
     <View style={styles.detailItem}>
@@ -33,7 +33,7 @@ const DetailsScreen = () => {
     const [isBaixaModalVisible, setBaixaModalVisible] = useState(false);
     const [isTransferModalVisible, setTransferModalVisible] = useState(false);
     const [isPickingModalVisible, setPickingModalVisible] = useState(false);
-    const [isCorrecaoModalVisible, setCorrecaoModalVisible] = useState(false); // <-- 2. Estado para o modal
+    const [isCorrecaoModalVisible, setCorrecaoModalVisible] = useState(false);
 
     useEffect(() => {
         const loadScreenData = async () => {
@@ -119,7 +119,6 @@ const DetailsScreen = () => {
         }
     };
     
-    // --- 3. FUNÇÃO PARA CONFIRMAR A CORREÇÃO ---
     const handleConfirmCorrecao = async (newQuantity) => {
         setCorrecaoModalVisible(false);
         setLoading(true);
@@ -153,7 +152,6 @@ const DetailsScreen = () => {
                 {showBaixa && <TouchableOpacity style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></TouchableOpacity>}
                 {permissions.transfer && <TouchableOpacity style={[styles.actionButton, styles.btnTransferir]} onPress={() => setTransferModalVisible(true)}><Text style={styles.actionButtonText}>Transferir</Text></TouchableOpacity>}
                 {showPicking && <TouchableOpacity style={[styles.actionButton, styles.btnPicking]} onPress={() => setPickingModalVisible(true)}><Text style={styles.actionButtonText}>Picking</Text></TouchableOpacity>}
-                {/* --- 4. AÇÃO onPress ATUALIZADA --- */}
                 {permissions.corre && <TouchableOpacity style={[styles.actionButton, styles.btnCorrecao]} onPress={() => setCorrecaoModalVisible(true)}><Text style={styles.actionButtonText}>Correção</Text></TouchableOpacity>}
             </View>
         );
@@ -185,7 +183,6 @@ const DetailsScreen = () => {
                 onConfirm={handleConfirmPicking}
                 itemDetails={details}
             />
-            {/* --- 5. RENDERIZE O NOVO MODAL --- */}
             <CorrecaoModal
                 visible={isCorrecaoModalVisible}
                 onClose={() => setCorrecaoModalVisible(false)}
@@ -225,7 +222,6 @@ const DetailsScreen = () => {
     );
 };
 
-// ... Seus estilos permanecem os mesmos
 const styles = StyleSheet.create({
     container: {
         flex: 1,

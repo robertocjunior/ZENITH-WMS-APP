@@ -1,37 +1,58 @@
 // components/common/LoadingOverlay.js
-import React from 'react';
-import { View, ActivityIndicator, Text, StyleSheet, Modal } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Modal, StyleSheet, Animated, Easing } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/theme';
 
-const LoadingOverlay = ({ visible }) => (
-    <Modal transparent={true} animationType="none" visible={visible}>
-        <View style={styles.overlay}>
-            <View style={styles.container}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.text}>Carregando...</Text>
+const LoadingOverlay = ({ visible }) => {
+    const rotationAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (visible) {
+            // Inicia a animação de rotação
+            Animated.loop(
+                Animated.timing(rotationAnim, {
+                    toValue: 1,
+                    duration: 1000,
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+            ).start();
+        }
+    }, [visible, rotationAnim]);
+
+    // Interpola o valor de 0-1 para 0-360 graus
+    const spin = rotationAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', '360deg'],
+    });
+
+    if (!visible) {
+        return null;
+    }
+
+    return (
+        <Modal
+            animationType="fade"
+            transparent={true}
+            visible={visible}
+        >
+            <View style={styles.overlay}>
+                <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                    <Ionicons name="reload-circle-outline" size={64} color={COLORS.primary} />
+                </Animated.View>
             </View>
-        </View>
-    </Modal>
-);
+        </Modal>
+    );
+};
 
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    container: {
-        backgroundColor: COLORS.white,
-        padding: 30,
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    text: {
-        marginTop: 15,
-        fontSize: 16,
-        color: COLORS.text,
-    },
+    }
 });
 
 export default LoadingOverlay;

@@ -1,6 +1,6 @@
 // components/modals/PickingModal.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, TouchableOpacity, Keyboard, ActivityIndicator } from 'react-native';
+import { View, Text, Modal, StyleSheet, TextInput, TouchableOpacity, Keyboard } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
 import DropDownPicker from 'react-native-dropdown-picker';
 import * as api from '../../api';
@@ -8,7 +8,6 @@ import * as api from '../../api';
 const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     const [quantity, setQuantity] = useState('');
     
-    // Estados para o Dropdown
     const [open, setOpen] = useState(false);
     const [destinationValue, setDestinationValue] = useState(null);
     const [destinationItems, setDestinationItems] = useState([]);
@@ -18,7 +17,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
         const fetchLocations = async () => {
             if (visible && itemDetails) {
                 setIsLoadingLocations(true);
-                setDestinationItems([]); // Limpa itens antigos
+                setDestinationItems([]);
                 try {
                     const { codarm, codprod, sequencia } = itemDetails;
                     const locations = await api.fetchPickingLocations(Number(codarm), Number(codprod), Number(sequencia));
@@ -42,10 +41,9 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     }, [visible, itemDetails]);
 
     useEffect(() => {
-        // Preenche a quantidade quando o modal se torna visível
         if (visible && itemDetails) {
             setQuantity(String(itemDetails.quantidade || ''));
-            setDestinationValue(null); // Reseta o valor selecionado
+            setDestinationValue(null);
         }
     }, [visible, itemDetails]);
 
@@ -96,7 +94,9 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                         disabled={isLoadingLocations}
                         style={styles.dropdownPicker}
                         containerStyle={styles.dropdownContainer}
-                        dropDownContainerStyle={styles.dropdownList}
+                        dropDownContainerStyle={[styles.dropdownList, { backgroundColor: COLORS.cardBackground }]}
+                        textStyle={{ color: COLORS.text }}
+                        listItemLabelStyle={{ color: COLORS.text }}
                         zIndex={3000}
                         zIndexInverse={1000}
                     />
@@ -133,17 +133,31 @@ const styles = StyleSheet.create({
     title: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 10, },
     infoText: { fontSize: 16, color: COLORS.textLight, marginBottom: 20, },
     label: { fontSize: 14, color: COLORS.textLight, marginBottom: 5, },
-    input: { width: '100%', padding: 12, fontSize: 16, borderRadius: SIZES.radius, borderWidth: 1, borderColor: COLORS.border, marginBottom: 15, },
+    input: { // <-- ALTERAÇÕES AQUI
+        width: '100%', 
+        padding: 12, 
+        fontSize: 16, 
+        borderRadius: SIZES.radius, 
+        borderWidth: 1, 
+        borderColor: COLORS.border, 
+        marginBottom: 15,
+        backgroundColor: COLORS.inputBackground,
+        color: COLORS.text,
+    },
     dropdownContainer: { marginBottom: 25 },
-    dropdownPicker: { borderColor: COLORS.border },
+    dropdownPicker: { // <-- ALTERAÇÕES AQUI
+        borderColor: COLORS.border,
+        backgroundColor: COLORS.inputBackground
+    },
     dropdownList: { borderColor: COLORS.border },
     buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
-    cancelButton: { backgroundColor: '#f0f2f5', },
+    cancelButton: { // <-- ALTERAÇÕES AQUI
+        backgroundColor: COLORS.buttonSecondaryBackground, 
+    },
     cancelButtonText: { color: COLORS.text, fontSize: 16, fontWeight: '500', },
     confirmButton: { backgroundColor: COLORS.primary, },
     confirmButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '500', },
 });
-
 
 export default PickingModal;

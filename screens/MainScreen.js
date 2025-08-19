@@ -26,7 +26,6 @@ const MainScreen = ({ navigation }) => {
     const [initialLoading, setInitialLoading] = useState(true);
     const [isPanelVisible, setPanelVisible] = useState(false);
 
-    // --- 1. FUNÇÃO DE BUSCA MODIFICADA PARA ACEITAR PARÂMETROS ---
     const handleSearch = async (searchWarehouse, searchFilter) => {
         const wh = searchWarehouse || warehouseValue;
         const ft = searchFilter !== undefined ? searchFilter : filter;
@@ -56,18 +55,11 @@ const MainScreen = ({ navigation }) => {
             };
             setSystemUIColor();
 
-            // --- 2. LÓGICA DE ATUALIZAÇÃO ---
             if (route.params?.refresh) {
                 const { warehouseValue: refreshWh, filter: refreshFt } = route.params;
-                
-                // Atualiza a UI para refletir os critérios da busca
                 setWarehouseValue(refreshWh);
                 setFilter(refreshFt);
-                
-                // Executa a busca com os critérios recebidos
                 handleSearch(refreshWh, refreshFt);
-                
-                // Limpa o parâmetro para evitar re-buscas
                 navigation.setParams({ refresh: false });
             }
         }, [route.params?.refresh])
@@ -92,7 +84,6 @@ const MainScreen = ({ navigation }) => {
         loadInitialData();
     }, []);
     
-    // --- 3. PASSANDO O FILTRO PARA A TELA DE DETALHES ---
     const handleShowDetails = (sequencia) => {
         navigation.navigate('Details', { sequencia, codArm: warehouseValue, filter: filter });
     };
@@ -135,7 +126,9 @@ const MainScreen = ({ navigation }) => {
                             placeholder="Selecione um Armazém"
                             style={styles.dropdownPicker}
                             containerStyle={styles.dropdownContainer}
-                            dropDownContainerStyle={styles.dropdownList}
+                            dropDownContainerStyle={[styles.dropdownList, { backgroundColor: COLORS.cardBackground }]} // <-- COR DE FUNDO DA LISTA
+                            textStyle={{ color: COLORS.text }} // <-- COR DO TEXTO NO SELETOR
+                            listItemLabelStyle={{ color: COLORS.text }} // <-- COR DO TEXTO NOS ITENS DA LISTA
                             zIndex={3000}
                             zIndexInverse={1000}
                         />
@@ -150,9 +143,10 @@ const MainScreen = ({ navigation }) => {
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Buscar..."
+                            placeholderTextColor={COLORS.textLight} // <-- COR DO PLACEHOLDER
                             value={filter}
                             onChangeText={setFilter}
-                            onSubmitEditing={() => handleSearch()} // Chamada sem parâmetros
+                            onSubmitEditing={() => handleSearch()}
                         />
                     </View>
                     <TouchableOpacity style={styles.searchButton} onPress={() => handleSearch()}>
@@ -177,7 +171,7 @@ const MainScreen = ({ navigation }) => {
         </View>
     );
 };
-// ... Seus estilos permanecem os mesmos
+
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
     header: {
@@ -191,13 +185,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SIZES.padding,
     },
-    pickerWrapper: {
+    pickerWrapper: { // <-- ALTERAÇÕES AQUI
         flex: 1,
         marginRight: 10,
         borderRadius: SIZES.radius,
         borderWidth: 1,
         borderColor: COLORS.border,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.inputBackground, // Fundo dinâmico
         height: 48,
         justifyContent: 'center',
     },
@@ -219,18 +213,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
-    searchInputWrapper: {
+    searchInputWrapper: { // <-- ALTERAÇÕES AQUI
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.inputBackground, // Fundo dinâmico
         borderRadius: SIZES.radius,
         height: 48,
     },
-    searchInput: {
+    searchInput: { // <-- ALTERAÇÕES AQUI
         flex: 1,
         paddingHorizontal: SIZES.padding / 2,
         fontSize: 16,
+        color: COLORS.text, // Cor do texto dinâmica
     },
     searchButton: {
         backgroundColor: COLORS.secondary,

@@ -1,4 +1,3 @@
-
 // components/modals/SettingsModal.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, StyleSheet, TextInput, TouchableOpacity, Keyboard, Alert } from 'react-native';
@@ -8,7 +7,6 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
     const [apiUrl, setApiUrl] = useState('');
 
     useEffect(() => {
-        // Preenche o campo com a URL atual quando o modal abre
         if (visible) {
             setApiUrl(currentApiUrl);
         }
@@ -19,7 +17,6 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
             Alert.alert("Erro", "Por favor, insira um endereço de servidor válido (ex: http://192.168.1.10:3030).");
             return;
         }
-        // Remove a /api do final se o usuário digitar, para padronizar
         const cleanedUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
         onSave(cleanedUrl);
     };
@@ -40,6 +37,7 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
                         value={apiUrl}
                         onChangeText={setApiUrl}
                         placeholder="http://192.168.1.10:3030"
+                        placeholderTextColor={COLORS.textLight}
                         autoCapitalize="none"
                         keyboardType="url"
                         autoFocus={true}
@@ -76,10 +74,22 @@ const styles = StyleSheet.create({
     },
     title: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 20, },
     label: { fontSize: 14, color: COLORS.textLight, marginBottom: 5, },
-    input: { width: '100%', padding: 12, fontSize: 16, borderRadius: SIZES.radius, borderWidth: 1, borderColor: COLORS.border, marginBottom: 25, },
+    input: { // <-- ALTERAÇÕES AQUI
+        width: '100%', 
+        padding: 12, 
+        fontSize: 16, 
+        borderRadius: SIZES.radius, 
+        borderWidth: 1, 
+        borderColor: COLORS.border, 
+        marginBottom: 25,
+        backgroundColor: COLORS.inputBackground,
+        color: COLORS.text,
+    },
     buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
-    cancelButton: { backgroundColor: '#f0f2f5', },
+    cancelButton: { // <-- ALTERAÇÕES AQUI
+        backgroundColor: COLORS.buttonSecondaryBackground, 
+    },
     cancelButtonText: { color: COLORS.text, fontSize: 16, fontWeight: '500', },
     confirmButton: { backgroundColor: COLORS.primary, },
     confirmButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '500', },

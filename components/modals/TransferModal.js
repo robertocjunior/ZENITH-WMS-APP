@@ -10,20 +10,17 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
     const [destinationAddress, setDestinationAddress] = useState('');
     const [isMarkedAsPicking, setMarkedAsPicking] = useState(false);
 
-    // Estados para o Dropdown
     const [open, setOpen] = useState(false);
     const [warehouseValue, setWarehouseValue] = useState(null);
     const [warehouseItems, setWarehouseItems] = useState([]);
 
     useEffect(() => {
         if (visible) {
-            // Reseta os campos quando o modal abre
             setQuantity(String(itemDetails?.quantidade || ''));
             setDestinationAddress('');
             setMarkedAsPicking(false);
             setWarehouseValue(null);
 
-            // Formata os armazéns para o DropDownPicker
             const formattedWarehouses = warehouses.map(([cod, desc]) => ({
                 label: desc,
                 value: cod
@@ -82,15 +79,16 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
                         placeholder="Selecione um Armazém"
                         style={styles.dropdownPicker}
                         containerStyle={styles.dropdownContainer}
-                        dropDownContainerStyle={styles.dropdownList}
+                        dropDownContainerStyle={[styles.dropdownList, { backgroundColor: COLORS.cardBackground }]}
+                        textStyle={{ color: COLORS.text }}
+                        listItemLabelStyle={{ color: COLORS.text }}
                         zIndex={3000}
                         zIndexInverse={1000}
                     />
 
                     <Text style={styles.label}>Endereço de Destino:</Text>
-                    <TextInput style={styles.input} value={destinationAddress} onChangeText={setDestinationAddress} keyboardType="numeric" placeholder="Digite o endereço de destino" />
+                    <TextInput style={styles.input} value={destinationAddress} onChangeText={setDestinationAddress} keyboardType="numeric" placeholder="Digite o endereço" placeholderTextColor={COLORS.textLight} />
 
-                    {/* Checkbox condicional */}
                     {permissions.criaPick && (
                         <TouchableOpacity style={styles.checkboxContainer} onPress={() => setMarkedAsPicking(!isMarkedAsPicking)}>
                             <Ionicons name={isMarkedAsPicking ? 'checkbox' : 'square-outline'} size={24} color={COLORS.primary} />
@@ -130,19 +128,33 @@ const styles = StyleSheet.create({
     title: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 10, },
     infoText: { fontSize: 16, color: COLORS.textLight, marginBottom: 20, },
     label: { fontSize: 14, color: COLORS.textLight, marginBottom: 5, },
-    input: { width: '100%', padding: 12, fontSize: 16, borderRadius: SIZES.radius, borderWidth: 1, borderColor: COLORS.border, marginBottom: 15, },
+    input: { // <-- ALTERAÇÕES AQUI
+        width: '100%', 
+        padding: 12, 
+        fontSize: 16, 
+        borderRadius: SIZES.radius, 
+        borderWidth: 1, 
+        borderColor: COLORS.border, 
+        marginBottom: 15,
+        backgroundColor: COLORS.inputBackground,
+        color: COLORS.text,
+    },
     dropdownContainer: { marginBottom: 15 },
-    dropdownPicker: { borderColor: COLORS.border },
+    dropdownPicker: { // <-- ALTERAÇÕES AQUI
+        borderColor: COLORS.border,
+        backgroundColor: COLORS.inputBackground,
+    },
     dropdownList: { borderColor: COLORS.border },
     checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, gap: 10 },
     checkboxLabel: { fontSize: 16, color: COLORS.text },
     buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
-    cancelButton: { backgroundColor: '#f0f2f5', },
+    cancelButton: { // <-- ALTERAÇÕES AQUI
+        backgroundColor: COLORS.buttonSecondaryBackground, 
+    },
     cancelButtonText: { color: COLORS.text, fontSize: 16, fontWeight: '500', },
     confirmButton: { backgroundColor: COLORS.primary, },
     confirmButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '500', },
 });
-
 
 export default TransferModal;

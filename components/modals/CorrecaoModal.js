@@ -7,14 +7,12 @@ const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     const [newQuantity, setNewQuantity] = useState('');
 
     useEffect(() => {
-        // Limpa o campo quando o modal abre
         if (visible) {
             setNewQuantity('');
         }
     }, [visible]);
 
     const handleConfirm = () => {
-        // Usamos parseFloat para permitir quantidades com casas decimais, se necessário
         const numQuantity = parseFloat(newQuantity.replace(',', '.'));
         if (isNaN(numQuantity) || numQuantity < 0) {
             alert('Por favor, insira uma nova quantidade válida.');
@@ -45,6 +43,7 @@ const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                         value={newQuantity}
                         onChangeText={setNewQuantity}
                         placeholder="0"
+                        placeholderTextColor={COLORS.textLight}
                         keyboardType="numeric"
                         autoFocus={true}
                     />
@@ -94,7 +93,7 @@ const styles = StyleSheet.create({
         color: COLORS.textLight,
         marginBottom: 5,
     },
-    input: {
+    input: { // <-- ALTERAÇÕES AQUI
         width: '100%',
         padding: 12,
         fontSize: 16,
@@ -102,6 +101,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.border,
         marginBottom: 25,
+        backgroundColor: COLORS.inputBackground,
+        color: COLORS.text,
     },
     buttonRow: {
         flexDirection: 'row',
@@ -113,8 +114,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 25,
         borderRadius: SIZES.radius,
     },
-    cancelButton: {
-        backgroundColor: '#f0f2f5',
+    cancelButton: { // <-- ALTERAÇÕES AQUI
+        backgroundColor: COLORS.buttonSecondaryBackground,
     },
     cancelButtonText: {
         color: COLORS.text,

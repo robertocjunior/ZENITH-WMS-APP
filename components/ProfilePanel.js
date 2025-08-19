@@ -51,9 +51,7 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
                         { width: panelWidth, transform: [{ translateX: slideAnim }] }
                     ]}
                 >
-                    {/* 1. O Pressable interno agora controla o layout dos filhos */}
                     <Pressable style={styles.panelContentContainer}>
-                        {/* Seção Superior (Cabeçalho e Corpo) */}
                         <View>
                             <View style={styles.panelHeader}>
                                 <View style={styles.userInfo}>
@@ -75,7 +73,6 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
                             </View>
                         </View>
 
-                        {/* Seção Inferior (Rodapé com o botão Sair) */}
                         <View style={styles.panelFooter}>
                             <TouchableOpacity style={[styles.panelButton, styles.logoutButton]} onPress={onLogout}>
                                 <Ionicons name="log-out-outline" size={22} color={COLORS.danger} />
@@ -101,10 +98,9 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
     },
-    // 2. Novo container de conteúdo para aplicar o flexbox corretamente
     panelContentContainer: {
         flex: 1,
-        justifyContent: 'space-between', // Empurra o primeiro e o último item para as extremidades
+        justifyContent: 'space-between',
     },
     panelHeader: {
         flexDirection: 'row',

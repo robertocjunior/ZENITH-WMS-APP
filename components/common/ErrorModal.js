@@ -1,26 +1,10 @@
 // components/common/ErrorModal.js
 import React from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
-import RenderHTML from 'react-native-render-html';
+import { View, Text, Modal, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 
-const ErrorModal = ({ visible, onClose, errorMessage }) => {
-    const { width } = useWindowDimensions();
-
-    const tagsStyles = {
-        body: {
-            whiteSpace: 'normal',
-            color: COLORS.textLight,
-        },
-        p: {
-            marginVertical: 5,
-        },
-        b: {
-            fontWeight: 'bold',
-            color: COLORS.text,
-        }
-    };
-
+const ErrorModal = ({ visible, errorMessage, onClose }) => {
     return (
         <Modal
             animationType="fade"
@@ -30,16 +14,11 @@ const ErrorModal = ({ visible, onClose, errorMessage }) => {
         >
             <View style={styles.overlay}>
                 <View style={styles.modalContent}>
-                    <Text style={styles.title}>Erro na Baixa</Text>
-                    <ScrollView style={styles.scroll}>
-                        <RenderHTML
-                            contentWidth={width - (SIZES.padding * 4)} // Subtrai o padding do modal
-                            source={{ html: errorMessage || '' }}
-                            tagsStyles={tagsStyles}
-                        />
-                    </ScrollView>
+                    <Ionicons name="warning-outline" size={48} color={COLORS.danger} style={styles.icon} />
+                    <Text style={styles.title}>Ocorreu um Erro</Text>
+                    <Text style={styles.message}>{errorMessage}</Text>
                     <TouchableOpacity style={styles.button} onPress={onClose}>
-                        <Text style={styles.buttonText}>OK</Text>
+                        <Text style={styles.buttonText}>Fechar</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -57,25 +36,32 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         width: '100%',
-        maxHeight: '80%',
-        backgroundColor: COLORS.cardBackground,
+        maxWidth: 400,
+        backgroundColor: COLORS.cardBackground, // <-- COR DO TEMA
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
+        alignItems: 'center',
+    },
+    icon: {
+        marginBottom: 15,
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: COLORS.text,
-        marginBottom: 15,
+        color: COLORS.text, // <-- COR DO TEMA
+        marginBottom: 10,
     },
-    scroll: {
-        marginBottom: 20,
+    message: {
+        fontSize: 16,
+        color: COLORS.textLight, // <-- COR DO TEMA
+        textAlign: 'center',
+        marginBottom: 25,
     },
     button: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: COLORS.danger,
         paddingVertical: 12,
+        paddingHorizontal: 40,
         borderRadius: SIZES.radius,
-        alignItems: 'center',
     },
     buttonText: {
         color: COLORS.white,

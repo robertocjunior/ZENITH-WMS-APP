@@ -9,8 +9,11 @@ const lightColors = {
     background: '#f0f2f5',
     cardBackground: '#ffffff',
     text: '#333333',
+    iconLogin: 'null',
     textLight: '#777777',
     border: '#e0e0e0',
+    inputBackground: '#ffffff',
+    buttonSecondaryBackground: '#e0e0e0',
     white: '#ffffff',
     black: '#000000',
     success: '#28a745',
@@ -29,13 +32,16 @@ const lightColors = {
 };
 
 const darkColors = {
-    primary: '#007bff', // Um azul mais vibrante para o tema escuro
+    primary: '#007bff',
     secondary: '#00A3E0',
     background: '#121212',
-    cardBackground: '#1e1e1e',
-    text: '#e0e0e0',
+    cardBackground: '#313131ff',
+    text: '#f0f0f0', // Texto principal mais claro
+    iconLogin: '#f0f0f0',
     textLight: '#a0a0a0',
-    border: '#333333',
+    border: '#444444', // Borda um pouco mais visível
+    inputBackground: '#333333', // Fundo específico para inputs
+    buttonSecondaryBackground: '#444444', // Fundo para botões secundários (ex: Cancelar)
     white: '#ffffff',
     black: '#000000',
     success: '#28a745',
