@@ -2,32 +2,42 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-const API_BASE_URL = 'http://192.168.2.57:3030/api'; // IP do seu log de erro
+// --- 1. LÓGICA DE URL DINÂMICA ---
+const API_URL_KEY = 'zenith_api_base_url';
+const DEFAULT_API_URL = 'http://192.168.2.57:3030'; // Um valor padrão caso nenhum seja salvo
 
-// Função genérica para chamadas autenticadas
+let API_BASE_URL = '';
+
+// Função para carregar e definir a URL da API
+export const initializeApiUrl = async () => {
+    const savedUrl = await AsyncStorage.getItem(API_URL_KEY);
+    API_BASE_URL = savedUrl || DEFAULT_API_URL;
+    console.log(`API URL definida como: ${API_BASE_URL}`);
+    return API_BASE_URL;
+};
+
+// Função para atualizar e salvar a URL
+export const setApiUrl = async (url) => {
+    await AsyncStorage.setItem(API_URL_KEY, url);
+    API_BASE_URL = url;
+    console.log(`API URL atualizada para: ${API_BASE_URL}`);
+};
+// ---------------------------------
+
 async function authenticatedFetch(endpoint, body = {}) {
-    // 1. Pega o token de sessão salvo no login
     const token = await AsyncStorage.getItem('sessionToken');
     if (!token) {
-        // Se não houver token, força o logout no app
         throw new Error('401'); 
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}/api${endpoint}`, { // Adiciona o /api aqui
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            // 2. Envia o token no cabeçalho para o backend
-            'Authorization': `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(body),
     });
 
-    if (response.status === 401) {
-        throw new Error('401'); // Sessão expirou no backend
-    }
+    if (response.status === 401) throw new Error('401');
     
-    // O await response.json() pode falhar se o corpo for vazio
     const responseText = await response.text();
     const data = responseText ? JSON.parse(responseText) : null;
 
@@ -39,6 +49,8 @@ async function authenticatedFetch(endpoint, body = {}) {
 }
 
 export async function login(username, password) {
+    if (!API_BASE_URL) await initializeApiUrl(); // Garante que a URL esteja carregada
+
     const userTokenKey = `deviceToken_${username.toUpperCase()}`;
     let deviceToken = await AsyncStorage.getItem(userTokenKey);
 
@@ -46,7 +58,7 @@ export async function login(username, password) {
         deviceToken = Constants.installationId;
     }
 
-    const response = await fetch(`${API_BASE_URL}/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, deviceToken })
@@ -65,11 +77,9 @@ export async function login(username, password) {
         await AsyncStorage.setItem(userTokenKey, data.deviceToken);
     }
 
-    // 3. Salva o sessionToken que o backend DEVE retornar
     if (data && data.sessionToken) {
         await AsyncStorage.setItem('sessionToken', data.sessionToken);
     } else {
-        // Se o backend não enviar o token, o app não poderá fazer chamadas autenticadas
         console.warn('AVISO: O sessionToken não foi recebido do servidor após o login.');
     }
 
@@ -77,40 +87,16 @@ export async function login(username, password) {
     return data;
 }
 
-// --- Funções da API Reativadas ---
-
+// ... (resto das funções da API permanecem as mesmas)
 export async function logout() {
-    // O corpo pode ser vazio, então tratamos a resposta de forma diferente
     await authenticatedFetch('/logout');
-    // Limpa o armazenamento local após o logout
     await AsyncStorage.removeItem('sessionToken');
     await AsyncStorage.removeItem('userSession');
 }
-
-export function fetchWarehouses() {
-    return authenticatedFetch('/get-warehouses');
-}
-
-export function fetchPermissions() {
-    return authenticatedFetch('/get-permissions');
-}
-
-export function searchItems(codArm, filtro) {
-    return authenticatedFetch('/search-items', { codArm, filtro });
-}
-
-export function fetchItemDetails(codArm, sequencia) {
-    return authenticatedFetch('/get-item-details', { codArm: String(codArm), sequencia: String(sequencia) });
-}
-
-export function fetchHistory() {
-    return authenticatedFetch('/get-history');
-}
-
-export function fetchPickingLocations(codarm, codprod, sequencia) {
-    return authenticatedFetch('/get-picking-locations', { codarm, codprod, sequencia });
-}
-
-export function executeTransaction(type, payload) {
-    return authenticatedFetch('/execute-transaction', { type, payload });
-}
+export const fetchWarehouses = () => authenticatedFetch('/get-warehouses');
+export const fetchPermissions = () => authenticatedFetch('/get-permissions');
+export const searchItems = (codArm, filtro) => authenticatedFetch('/search-items', { codArm, filtro });
+export const fetchItemDetails = (codArm, sequencia) => authenticatedFetch('/get-item-details', { codArm: String(codArm), sequencia: String(sequencia) });
+export const fetchHistory = () => authenticatedFetch('/get-history');
+export const fetchPickingLocations = (codarm, codprod, sequencia) => authenticatedFetch('/get-picking-locations', { codarm, codprod, sequencia });
+export const executeTransaction = (type, payload) => authenticatedFetch('/execute-transaction', { type, payload });
