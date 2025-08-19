@@ -11,7 +11,8 @@ import { formatData } from '../utils/formatter';
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import BaixaModal from '../components/modals/BaixaModal';
 import TransferModal from '../components/modals/TransferModal';
-import PickingModal from '../components/modals/PickingModal'; // <-- 1. Importe o novo modal
+import PickingModal from '../components/modals/PickingModal';
+import CorrecaoModal from '../components/modals/CorrecaoModal'; // <-- 1. Importe o novo modal
 
 const DetailItem = ({ label, value }) => (
     <View style={styles.detailItem}>
@@ -31,7 +32,8 @@ const DetailsScreen = () => {
     const [details, setDetails] = useState(null);
     const [isBaixaModalVisible, setBaixaModalVisible] = useState(false);
     const [isTransferModalVisible, setTransferModalVisible] = useState(false);
-    const [isPickingModalVisible, setPickingModalVisible] = useState(false); // <-- 2. Estado para o modal
+    const [isPickingModalVisible, setPickingModalVisible] = useState(false);
+    const [isCorrecaoModalVisible, setCorrecaoModalVisible] = useState(false); // <-- 2. Estado para o modal
 
     useEffect(() => {
         const loadScreenData = async () => {
@@ -94,8 +96,7 @@ const DetailsScreen = () => {
             setLoading(false);
         }
     };
-
-    // --- 3. FUNÇÃO PARA CONFIRMAR O PICKING ---
+    
     const handleConfirmPicking = async (pickingData) => {
         setPickingModalVisible(false);
         setLoading(true);
@@ -117,6 +118,26 @@ const DetailsScreen = () => {
             setLoading(false);
         }
     };
+    
+    // --- 3. FUNÇÃO PARA CONFIRMAR A CORREÇÃO ---
+    const handleConfirmCorrecao = async (newQuantity) => {
+        setCorrecaoModalVisible(false);
+        setLoading(true);
+        try {
+            const payload = {
+                codarm: details.codarm,
+                sequencia: details.sequencia,
+                newQuantity: newQuantity
+            };
+            const result = await api.executeTransaction('correcao', payload);
+            Alert.alert("Sucesso", result.message || "Quantidade corrigida com sucesso!");
+            navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const renderActionButtons = () => {
         if (!details || !permissions) return null;
@@ -131,9 +152,9 @@ const DetailsScreen = () => {
             <View style={styles.actionsFooter}>
                 {showBaixa && <TouchableOpacity style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></TouchableOpacity>}
                 {permissions.transfer && <TouchableOpacity style={[styles.actionButton, styles.btnTransferir]} onPress={() => setTransferModalVisible(true)}><Text style={styles.actionButtonText}>Transferir</Text></TouchableOpacity>}
-                {/* --- 4. AÇÃO onPress ATUALIZADA --- */}
                 {showPicking && <TouchableOpacity style={[styles.actionButton, styles.btnPicking]} onPress={() => setPickingModalVisible(true)}><Text style={styles.actionButtonText}>Picking</Text></TouchableOpacity>}
-                {permissions.corre && <TouchableOpacity style={[styles.actionButton, styles.btnCorrecao]}><Text style={styles.actionButtonText}>Correção</Text></TouchableOpacity>}
+                {/* --- 4. AÇÃO onPress ATUALIZADA --- */}
+                {permissions.corre && <TouchableOpacity style={[styles.actionButton, styles.btnCorrecao]} onPress={() => setCorrecaoModalVisible(true)}><Text style={styles.actionButtonText}>Correção</Text></TouchableOpacity>}
             </View>
         );
     };
@@ -158,11 +179,17 @@ const DetailsScreen = () => {
                 warehouses={warehouses}
                 permissions={permissions}
             />
-            {/* --- 5. RENDERIZE O NOVO MODAL --- */}
             <PickingModal
                 visible={isPickingModalVisible}
                 onClose={() => setPickingModalVisible(false)}
                 onConfirm={handleConfirmPicking}
+                itemDetails={details}
+            />
+            {/* --- 5. RENDERIZE O NOVO MODAL --- */}
+            <CorrecaoModal
+                visible={isCorrecaoModalVisible}
+                onClose={() => setCorrecaoModalVisible(false)}
+                onConfirm={handleConfirmCorrecao}
                 itemDetails={details}
             />
             
