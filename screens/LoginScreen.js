@@ -21,15 +21,23 @@ const LoginScreen = () => {
     const [currentApiUrl, setCurrentApiUrl] = useState('');
     const keyboardHeightAnim = useRef(new Animated.Value(0)).current;
 
+    const isSettingsVisibleRef = useRef(isSettingsVisible);
+
+    useEffect(() => {
+        isSettingsVisibleRef.current = isSettingsVisible;
+    }, [isSettingsVisible]);
+
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
             (e) => {
-                Animated.timing(keyboardHeightAnim, {
-                    toValue: e.endCoordinates.height,
-                    duration: 250,
-                    useNativeDriver: false,
-                }).start();
+                if (!isSettingsVisibleRef.current) {
+                    Animated.timing(keyboardHeightAnim, {
+                        toValue: e.endCoordinates.height,
+                        duration: 250,
+                        useNativeDriver: false,
+                    }).start();
+                }
             }
         );
         const keyboardDidHideListener = Keyboard.addListener(
@@ -67,15 +75,19 @@ const LoginScreen = () => {
     );
 
     const handleLogin = async () => {
+        Keyboard.dismiss();
         if (!username || !password) {
-            Alert.alert("Erro", "Por favor, preencha o usuário e a senha.");
+            // A linha abaixo foi removida para usar o modal global
+            // Alert.alert("Erro", "Por favor, preencha o usuário e a senha.");
             return;
         }
         setLoading(true);
         try {
             await login(username, password);
         } catch (error) {
-            Alert.alert("Falha no Login", error.message);
+            // A linha abaixo foi removida. O AuthContext vai capturar o erro.
+            // Alert.alert("Falha no Login", error.message);
+            console.log("Login failed, context will handle error display");
         } finally {
             setLoading(false);
         }
@@ -97,14 +109,12 @@ const LoginScreen = () => {
                 currentApiUrl={currentApiUrl}
             />
             
-            {/* Camada de Fundo: Botão de Configurações */}
             <View style={styles.headerContainer}>
                 <AnimatedButton style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
                     <Ionicons name="settings-outline" size={28} color={COLORS.headerIcon} />
                 </AnimatedButton>
             </View>
 
-            {/* Camada da Frente: Formulário de Login Animado */}
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <Animated.View style={[styles.centeringContainer, { paddingBottom: keyboardHeightAnim }]}>
                     <View style={styles.loginContainer}>
@@ -154,7 +164,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center', 
         paddingHorizontal: 20,
-        pointerEvents: 'box-none', // <-- MUDANÇA 1: Deixa cliques "atravessarem" esta view
+        pointerEvents: 'box-none',
     },
     loginContainer: { 
         backgroundColor: COLORS.cardBackground, 
@@ -162,7 +172,7 @@ const styles = StyleSheet.create({
         borderRadius: 12, 
         width: '100%', 
         maxWidth: 400,
-        pointerEvents: 'auto', // <-- MUDANÇA 2: Garante que o formulário e seus filhos recebam cliques
+        pointerEvents: 'auto',
     },
     logoContainer: { 
         alignItems: 'center', 

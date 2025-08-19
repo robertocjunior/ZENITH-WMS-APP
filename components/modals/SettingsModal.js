@@ -1,15 +1,63 @@
 // components/modals/SettingsModal.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Alert, Pressable } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Alert, Animated, Platform, Pressable } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
 import AnimatedButton from '../common/AnimatedButton';
 
 const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
     const [apiUrl, setApiUrl] = useState('');
+    
+    const [isModalVisible, setIsModalVisible] = useState(visible);
+    const modalOpacity = useRef(new Animated.Value(0)).current;
+    const modalScale = useRef(new Animated.Value(0.9)).current;
+
+    // 1. Adicionar a mesma lógica de animação do teclado da tela de login
+    const keyboardHeightAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            (e) => {
+                Animated.timing(keyboardHeightAnim, {
+                    toValue: e.endCoordinates.height,
+                    duration: 250,
+                    useNativeDriver: false,
+                }).start();
+            }
+        );
+        const keyboardDidHideListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => {
+                Animated.timing(keyboardHeightAnim, {
+                    toValue: 0,
+                    duration: 200,
+                    useNativeDriver: false,
+                }).start();
+            }
+        );
+
+        return () => {
+            keyboardDidHideListener.remove();
+            keyboardDidShowListener.remove();
+        };
+    }, []);
+
 
     useEffect(() => {
         if (visible) {
+            setIsModalVisible(true);
             setApiUrl(currentApiUrl);
+            Animated.parallel([
+                Animated.timing(modalOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+                Animated.spring(modalScale, { toValue: 1, friction: 6, useNativeDriver: true })
+            ]).start();
+        } else {
+            Animated.parallel([
+                 Animated.timing(modalOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+                 Animated.timing(modalScale, { toValue: 0.9, duration: 200, useNativeDriver: true })
+            ]).start(() => {
+                setIsModalVisible(false);
+            });
         }
     }, [visible, currentApiUrl]);
 
@@ -20,40 +68,54 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
         }
         const cleanedUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
         onSave(cleanedUrl);
+        onClose();
     };
 
+    const handleClose = () => {
+        Keyboard.dismiss();
+        onClose();
+    };
+    
     return (
         <Modal
-            animationType="fade"
+            animationType="none"
             transparent={true}
-            visible={visible}
-            onRequestClose={onClose}
+            visible={isModalVisible}
+            onRequestClose={handleClose}
+            statusBarTranslucent={true}
         >
-            <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
-                <View style={styles.modalContent}>
-                    <Text style={styles.title}>Configurações do Servidor</Text>
-                    <Text style={styles.label}>Endereço da API do Backend:</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={apiUrl}
-                        onChangeText={setApiUrl}
-                        placeholder="http://192.168.1.10:3030"
-                        placeholderTextColor={COLORS.textLight}
-                        autoCapitalize="none"
-                        keyboardType="url"
-                        autoFocus={true}
-                    />
-
-                    <View style={styles.buttonRow}>
-                        <AnimatedButton style={[styles.button, styles.cancelButton]} onPress={onClose}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </AnimatedButton>
-                        <AnimatedButton style={[styles.button, styles.confirmButton]} onPress={handleSave}>
-                            <Text style={styles.confirmButtonText}>Salvar</Text>
-                        </AnimatedButton>
-                    </View>
-                </View>
-            </Pressable>
+            <Animated.View style={[styles.overlay, { opacity: modalOpacity }]}>
+                <Pressable style={styles.pressableOverlay} onPress={handleClose}>
+                     {/* 2. Aplicar o paddingBottom animado a este container */}
+                    <Animated.View style={[styles.centeringContainer, { paddingBottom: keyboardHeightAnim }]}>
+                        <Animated.View style={[styles.modalContent, { transform: [{ scale: modalScale }] }]}>
+                            {/* Adicionado um Pressable para o conteúdo não fechar ao ser tocado */}
+                            <Pressable onPress={(e) => e.stopPropagation()}>
+                                <Text style={styles.title}>Configurações do Servidor</Text>
+                                <Text style={styles.label}>Endereço da API do Backend:</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={apiUrl}
+                                    onChangeText={setApiUrl}
+                                    placeholder="http://192.168.1.10:3030"
+                                    placeholderTextColor={COLORS.textLight}
+                                    autoCapitalize="none"
+                                    keyboardType="url"
+                                    autoFocus={true}
+                                />
+                                <View style={styles.buttonRow}>
+                                    <AnimatedButton style={[styles.button, styles.cancelButton]} onPress={handleClose}>
+                                        <Text style={styles.cancelButtonText}>Cancelar</Text>
+                                    </AnimatedButton>
+                                    <AnimatedButton style={[styles.button, styles.confirmButton]} onPress={handleSave}>
+                                        <Text style={styles.confirmButtonText}>Salvar</Text>
+                                    </AnimatedButton>
+                                </View>
+                            </Pressable>
+                        </Animated.View>
+                    </Animated.View>
+                </Pressable>
+            </Animated.View>
         </Modal>
     );
 };
@@ -62,6 +124,14 @@ const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    pressableOverlay: {
+        flex: 1,
+        width: '100%',
+    },
+    // Container que será animado para cima
+    centeringContainer: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,

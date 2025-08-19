@@ -1,28 +1,52 @@
 // components/common/ErrorModal.js
-import React from 'react';
-import { View, Text, Modal, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Modal, StyleSheet, Animated } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedButton from './AnimatedButton';
 
 const ErrorModal = ({ visible, errorMessage, onClose }) => {
+    const [isModalVisible, setIsModalVisible] = useState(visible);
+    const modalOpacity = useRef(new Animated.Value(0)).current;
+    const modalScale = useRef(new Animated.Value(0.9)).current;
+
+    useEffect(() => {
+        if (visible) {
+            setIsModalVisible(true);
+            Animated.parallel([
+                Animated.timing(modalOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+                Animated.spring(modalScale, { toValue: 1, friction: 6, useNativeDriver: true })
+            ]).start();
+        } else {
+            Animated.parallel([
+                 Animated.timing(modalOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+                 Animated.timing(modalScale, { toValue: 0.9, duration: 200, useNativeDriver: true })
+            ]).start(() => {
+                setIsModalVisible(false);
+            });
+        }
+    }, [visible]);
+
     return (
         <Modal
-            animationType="fade"
+            animationType="none"
             transparent={true}
-            visible={visible}
+            visible={isModalVisible}
             onRequestClose={onClose}
+            statusBarTranslucent={true}
         >
-            <View style={styles.overlay}>
-                <View style={styles.modalContent}>
+            <Animated.View style={[styles.overlay, { opacity: modalOpacity }]}>
+                <Animated.View style={[styles.modalContent, { transform: [{ scale: modalScale }] }]}>
                     <Ionicons name="warning-outline" size={48} color={COLORS.danger} style={styles.icon} />
-                    <Text style={styles.title}>Ocorreu um Erro</Text>
+                    <Text style={styles.title}>Falha no Login</Text>
                     <Text style={styles.message}>{errorMessage}</Text>
-                    <AnimatedButton style={styles.button} onPress={onClose}>
-                        <Text style={styles.buttonText}>Fechar</Text>
-                    </AnimatedButton>
-                </View>
-            </View>
+                    <View style={styles.buttonRow}>
+                        <AnimatedButton style={[styles.button, styles.confirmButton]} onPress={onClose}>
+                            <Text style={styles.buttonText}>OK</Text>
+                        </AnimatedButton>
+                    </View>
+                </Animated.View>
+            </Animated.View>
         </Modal>
     );
 };
@@ -58,11 +82,17 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 25,
     },
+    buttonRow: {
+        width: '100%',
+        alignItems: 'flex-end',
+    },
     button: {
-        backgroundColor: COLORS.danger,
         paddingVertical: 12,
-        paddingHorizontal: 40,
+        paddingHorizontal: 35,
         borderRadius: SIZES.radius,
+    },
+    confirmButton: {
+        backgroundColor: COLORS.primary,
     },
     buttonText: {
         color: COLORS.white,
