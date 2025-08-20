@@ -6,10 +6,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 const { width } = Dimensions.get('window');
 const FORKLIFT_SIZE = 100;
 const ANIMATION_DURATION = 3000;
-const LETTER_SPACING = 8; // Define o espaçamento que será adicionado
+const LETTER_SPACING = 8;
 
 const WmsLoadingAnimation = () => {
-    const { colors } = useTheme();
+    const { colors } = useTheme(); 
     const translateX = useRef(new Animated.Value(-FORKLIFT_SIZE)).current;
     const pulseAnimation = useRef(new Animated.Value(1)).current;
     const forkliftOpacity = useRef(new Animated.Value(1)).current;
@@ -93,6 +93,7 @@ const WmsLoadingAnimation = () => {
                 style={styles.logo}
             />
             
+            {/* CORREÇÃO AQUI: 'a.animationArea' foi trocado por 'styles.animationArea' */}
             <View style={styles.animationArea}>
                 <Animated.View style={[styles.nameContainer, { transform: [{ scale: pulseAnimation }] }]}>
                     {letters.map((letter, index) => (
@@ -101,7 +102,6 @@ const WmsLoadingAnimation = () => {
                             style={[
                                 styles.nameText, 
                                 createLetterAnimation(index),
-                                // A MÁGICA ACONTECE AQUI: Adiciona margem se a letra não for 'I' e não for a última
                                 (letter !== 'I' && index < letters.length - 1) && { marginRight: LETTER_SPACING }
                             ]}
                         >
@@ -112,7 +112,7 @@ const WmsLoadingAnimation = () => {
 
                 <Animated.View style={[styles.forkliftContainer, { opacity: forkliftOpacity, transform: [{ translateX }] }]}>
                     <Image
-                        source={require('../../assets/icons/forklift.png')}
+                        source={colors.Forklift}
                         style={styles.forklift}
                     />
                 </Animated.View>
@@ -146,7 +146,7 @@ const getStyles = (colors) => StyleSheet.create({
     nameText: {
         fontFamily: 'Zenith-Regular',
         fontSize: 42,
-        color: colors.primary,
+        color: colors.LoadingName, 
         width: 25,
         textAlign: 'center',
     },

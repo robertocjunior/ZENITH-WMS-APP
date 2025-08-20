@@ -28,8 +28,10 @@ export const lightColors = {
     correctionBackground: '#fff8e1',
     correctionBorder: '#ffecb3',
     correctionHeader: '#c09b00',
+    LoadingName: '#102E48',
     logo512x512: require('../assets/icons/icon512x512.png'),
     logoName: require('../assets/icons/name.png'),
+    Forklift: require('../assets/icons/forklift.png'),
 };
 
 export const darkColors = {
@@ -60,8 +62,10 @@ export const darkColors = {
     correctionBackground: '#4d452d',
     correctionBorder: '#8c7e5a',
     correctionHeader: '#e0c466',
+    LoadingName: '#24ACE0',
     logo512x512: require('../assets/icons/icon512x512-dark.png'),
     logoName: require('../assets/icons/name-dark.png'),
+    Forklift: require('../assets/icons/forklift-dark.png'),
 };
 
 export const SIZES = {
