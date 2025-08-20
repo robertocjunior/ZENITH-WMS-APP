@@ -4,8 +4,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import AppNavigator from './navigation/AppNavigator';
 import ErrorModal from './components/common/ErrorModal';
-// LoadingOverlay não é mais importado para o fluxo de login
 import { LogBox, StatusBar } from 'react-native';
+import { useFonts } from 'expo-font'; // 1. Importar useFonts
 
 LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
 
@@ -22,12 +22,21 @@ const AppContent = () => {
         errorMessage={apiError}
         onClose={clearApiError}
       />
-      {/* O LoadingOverlay foi removido daqui */}
     </>
   );
 }
 
 export default function App() {
+  // 2. Carregar a fonte personalizada
+  const [fontsLoaded] = useFonts({
+    'Zenith-Regular': require('./assets/fonts/Zenith-Regular.otf'),
+  });
+
+  // 3. Garantir que o app só seja renderizado após a fonte carregar
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <AuthProvider>
       <ThemeProvider>

@@ -5,16 +5,16 @@ import * as api from '../api';
 
 const AuthContext = createContext(null);
 
+const MINIMUM_LOADING_TIME = 3000; // 3 segundos (mesma duração da animação)
+
 export const AuthProvider = ({ children }) => {
     const [userSession, setUserSession] = useState(null);
     const [permissions, setPermissions] = useState(null);
     const [warehouses, setWarehouses] = useState([]);
-    const [isLoading, setIsLoading] = useState(true); // Loading inicial do app
+    const [isLoading, setIsLoading] = useState(true);
     const [apiError, setApiError] = useState(null);
-    // Novo estado para controlar o fluxo de navegação
-    const [authStatus, setAuthStatus] = useState('loggedOut'); // 'loggedOut', 'authenticating', 'loggedIn'
+    const [authStatus, setAuthStatus] = useState('loggedOut');
 
-    // Efeito para carregar a sessão salva ao iniciar o app
     useEffect(() => {
         const checkLogin = async () => {
             try {
@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
                     setUserSession(parsedData.userSession);
                     setPermissions(parsedData.permissions);
                     setWarehouses(parsedData.warehouses);
-                    setAuthStatus('loggedIn'); // Se encontrou sessão, já está logado
+                    setAuthStatus('loggedIn');
                 } else {
                     setAuthStatus('loggedOut');
                 }
@@ -38,22 +38,29 @@ export const AuthProvider = ({ children }) => {
         api.initializeApiUrl().then(checkLogin);
     }, []);
 
-    // Efeito que busca os dados após a confirmação do login
     useEffect(() => {
         const fetchAppData = async () => {
             if (authStatus === 'authenticating') {
                 try {
-                    const [perms, whs] = await Promise.all([api.fetchPermissions(), api.fetchWarehouses()]);
-                    
-                    const sessionToSave = { userSession, permissions: perms, warehouses: whs };
-                    await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
-                    
-                    setPermissions(perms);
-                    setWarehouses(whs);
-                    setAuthStatus('loggedIn'); // Dados carregados, pode ir para a MainScreen
+                    // Promessa para o carregamento dos dados
+                    const dataPromise = (async () => {
+                        const [perms, whs] = await Promise.all([api.fetchPermissions(), api.fetchWarehouses()]);
+                        const sessionToSave = { userSession, permissions: perms, warehouses: whs };
+                        await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
+                        setPermissions(perms);
+                        setWarehouses(whs);
+                    })();
+
+                    // Promessa para garantir a duração mínima da animação
+                    const minTimePromise = new Promise(resolve => setTimeout(resolve, MINIMUM_LOADING_TIME));
+
+                    // Espera ambas as promessas terminarem
+                    await Promise.all([dataPromise, minTimePromise]);
+
+                    setAuthStatus('loggedIn');
                 } catch (error) {
                     handleApiError(error);
-                    await logout(); // Se falhar ao buscar dados, desloga
+                    await logout();
                 }
             }
         };
@@ -63,10 +70,11 @@ export const AuthProvider = ({ children }) => {
     const login = async (username, password) => {
         setApiError(null);
         try {
-            // Etapa 1: Validar credenciais
             const response = await api.login(username, password);
-            setUserSession(response); // Guarda a sessão do usuário
-            setAuthStatus('authenticating'); // Muda o estado para iniciar o carregamento dos dados
+            setUserSession(response);
+
+            // Apenas muda o estado, o useEffect acima cuidará do resto
+            setAuthStatus('authenticating');
         } catch (error) {
             handleApiError(error);
             throw error;
@@ -100,7 +108,7 @@ export const AuthProvider = ({ children }) => {
         permissions,
         warehouses,
         isLoading,
-        authStatus, // Expor o novo estado para o AppNavigator
+        authStatus,
         apiError,
         clearApiError: () => setApiError(null),
         login,
