@@ -1,57 +1,34 @@
 // components/common/LoadingOverlay.js
 import React, { useEffect, useRef } from 'react';
-import { View, Modal, StyleSheet, Animated, Easing } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Modal, StyleSheet, Animated, Easing, Image } from 'react-native';
+// Ionicons foi removido, pois não é mais usado
 import { useTheme } from '../../contexts/ThemeContext';
 
 const LoadingOverlay = ({ visible }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     
+    // Mantemos apenas a animação de rotação
     const rotationAnim = useRef(new Animated.Value(0)).current;
-    const pulseAnim = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
         if (visible) {
-            const rotation = Animated.loop(
+            // A animação de rotação contínua
+            Animated.loop(
                 Animated.timing(rotationAnim, {
                     toValue: 1,
-                    duration: 1200,
+                    duration: 1000, // Duração de 1 segundo por volta
                     easing: Easing.linear,
                     useNativeDriver: true,
                 })
-            );
-
-            const pulse = Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnim, {
-                        toValue: 1.2,
-                        duration: 600,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(pulseAnim, {
-                        toValue: 1,
-                        duration: 600,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                    }),
-                ])
-            );
-            
-            Animated.parallel([rotation, pulse]).start();
-
+            ).start();
         }
-    }, [visible, rotationAnim, pulseAnim]);
+    }, [visible, rotationAnim]);
 
+    // Interpola o valor da animação para graus (0 a 360)
     const spin = rotationAnim.interpolate({
         inputRange: [0, 1],
         outputRange: ['0deg', '360deg'],
-    });
-
-    const opacity = pulseAnim.interpolate({
-        inputRange: [1, 1.1, 1.2],
-        outputRange: [1, 0.7, 1]
     });
 
     if (!visible) {
@@ -66,12 +43,14 @@ const LoadingOverlay = ({ visible }) => {
             statusBarTranslucent={true}
         >
             <View style={styles.overlay}>
-                <Animated.View style={{
-                    opacity: opacity,
-                    transform: [{ rotate: spin }, { scale: pulseAnim }]
-                }}>
-                    <Ionicons name="reload-circle-outline" size={64} color={colors.primary} />
-                </Animated.View>
+                {/* Usamos Animated.Image para poder animar a propriedade transform */}
+                <Animated.Image
+                    source={colors.LoadingIcon} // Usando o novo ícone do seu tema
+                    style={[
+                        styles.icon,
+                        { transform: [{ rotate: spin }] }
+                    ]}
+                />
             </View>
         </Modal>
     );
@@ -80,9 +59,13 @@ const LoadingOverlay = ({ visible }) => {
 const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'transparent',
+        backgroundColor: 'transparent', // Fundo transparente, sem escurecimento
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    icon: {
+        width: 64, // Tamanho do ícone
+        height: 64, // Tamanho do ícone
     }
 });
 
