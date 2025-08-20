@@ -1,6 +1,6 @@
 // screens/DetailsScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native'; // Alert foi removido
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as api from '../api';
@@ -14,13 +14,15 @@ import TransferModal from '../components/modals/TransferModal';
 import PickingModal from '../components/modals/PickingModal';
 import CorrecaoModal from '../components/modals/CorrecaoModal';
 import AnimatedButton from '../components/common/AnimatedButton';
+// 1. Importar os modais de sucesso e erro
+import SuccessModal from '../components/common/SuccessModal';
+import ErrorModal from '../components/common/ErrorModal';
 
 const DetailsScreen = () => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const route = useRoute();
     const navigation = useNavigation();
-    // 1. A função 'refreshPermissions' que não existe foi REMOVIDA daqui.
     const { permissions, handleApiError, warehouses } = useAuth();
     
     const { sequencia, codArm, filter } = route.params;
@@ -31,6 +33,11 @@ const DetailsScreen = () => {
     const [isTransferModalVisible, setTransferModalVisible] = useState(false);
     const [isPickingModalVisible, setPickingModalVisible] = useState(false);
     const [isCorrecaoModalVisible, setCorrecaoModalVisible] = useState(false);
+
+    // 2. Adicionar estados para os novos modais
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
+
 
     const DetailItem = ({ label, value }) => (
         <View style={styles.detailItem}>
@@ -44,31 +51,39 @@ const DetailsScreen = () => {
             if (!codArm || !sequencia) return;
             setLoading(true);
             try {
-                // 2. A chamada para 'refreshPermissions' foi REMOVIDA daqui.
                 const detailsData = await api.fetchItemDetails(String(codArm), sequencia);
-                
                 const [codarm, seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao] = detailsData;
                 setDetails({ codarm, sequencia: seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao });
-
-            } catch (error) {
-                handleApiError(error);
-                Alert.alert("Erro", "Não foi possível carregar os dados do item.", [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            } catch (err) {
+                handleApiError(err);
+                // 3. Usar o ErrorModal em vez do Alert
+                setError("Não foi possível carregar os dados do item.");
             } finally {
                 setLoading(false);
             }
         };
-
         loadScreenData();
     }, [codArm, sequencia]);
     
+    // Função para fechar o modal de erro e voltar para a tela anterior
+    const closeErrorAndGoBack = () => {
+        setError(null);
+        navigation.goBack();
+    }
+
+    // Função para fechar o modal de sucesso e navegar para a tela principal
+    const closeSuccessAndRefresh = () => {
+        setSuccess(null);
+        navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
+    }
+
     const handleConfirmBaixa = async (quantity) => {
         setBaixaModalVisible(false);
         setLoading(true);
         try {
             const payload = { codarm: details.codarm, sequencia: details.sequencia, quantidade: quantity };
             const result = await api.executeTransaction('baixa', payload);
-            Alert.alert("Sucesso", result.message || "Baixa realizada com sucesso!");
-            navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
+            setSuccess(result.message || "Baixa realizada com sucesso!");
         } catch (error) {
             handleApiError(error);
         } finally {
@@ -90,8 +105,7 @@ const DetailsScreen = () => {
                 }
             };
             const result = await api.executeTransaction('transferencia', payload);
-            Alert.alert("Sucesso", result.message || "Transferência realizada com sucesso!");
-            navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
+            setSuccess(result.message || "Transferência realizada com sucesso!");
         } catch (error) {
             handleApiError(error);
         } finally {
@@ -112,8 +126,7 @@ const DetailsScreen = () => {
                 }
             };
             const result = await api.executeTransaction('picking', payload);
-            Alert.alert("Sucesso", result.message || "Movido para picking com sucesso!");
-            navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
+            setSuccess(result.message || "Movido para picking com sucesso!");
         } catch (error) {
             handleApiError(error);
         } finally {
@@ -131,8 +144,7 @@ const DetailsScreen = () => {
                 newQuantity: newQuantity
             };
             const result = await api.executeTransaction('correcao', payload);
-            Alert.alert("Sucesso", result.message || "Quantidade corrigida com sucesso!");
-            navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
+            setSuccess(result.message || "Quantidade corrigida com sucesso!");
         } catch (error) {
             handleApiError(error);
         } finally {
@@ -142,10 +154,8 @@ const DetailsScreen = () => {
 
     const renderActionButtons = () => {
         if (!details || !permissions) return null;
-
         const showBaixa = (details.endpic === 'S') ? permissions.bxaPick : permissions.baixa;
         const showPicking = permissions.pick && details.endpic !== 'S';
-
         const hasAnyAction = showBaixa || permissions.transfer || showPicking || permissions.corre;
         if (!hasAnyAction) return null;
 
@@ -160,11 +170,30 @@ const DetailsScreen = () => {
     };
 
     if (loading || !details) {
-        return <LoadingOverlay visible={true} />;
+        // Se ainda estiver carregando, mostra o overlay, mas também o modal de erro se houver
+        return (
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+                <LoadingOverlay visible={loading} />
+                <ErrorModal visible={!!error} errorMessage={error} onClose={closeErrorAndGoBack} />
+            </View>
+        );
     }
 
     return (
         <View style={styles.container}>
+            {/* 4. Renderizar os novos modais */}
+            <SuccessModal
+                visible={!!success}
+                title="Sucesso!"
+                message={success}
+                onClose={closeSuccessAndRefresh}
+            />
+            <ErrorModal
+                visible={!!error}
+                errorMessage={error}
+                onClose={closeErrorAndGoBack}
+            />
+
             <BaixaModal
                 visible={isBaixaModalVisible}
                 onClose={() => setBaixaModalVisible(false)}
@@ -224,6 +253,7 @@ const DetailsScreen = () => {
     );
 };
 
+// ... o restante do 'getStyles' permanece o mesmo ...
 const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,

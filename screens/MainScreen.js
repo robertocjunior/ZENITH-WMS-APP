@@ -1,6 +1,6 @@
 // screens/MainScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Alert, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, Keyboard } from 'react-native'; // Alert foi removido
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import * as api from '../api';
@@ -13,12 +13,12 @@ import LoadingOverlay from '../components/common/LoadingOverlay';
 import ResultCard from '../components/ResultCard';
 import ProfilePanel from '../components/ProfilePanel';
 import AnimatedButton from '../components/common/AnimatedButton';
+// 1. Importar o ErrorModal
+import ErrorModal from '../components/common/ErrorModal';
 
 const MainScreen = ({ navigation }) => {
-    // A lógica de loading inicial foi removida daqui
     const { logout, handleApiError, warehouses } = useAuth();
     const { colors } = useTheme();
-    // ... o restante do componente permanece igual ...
     const styles = getStyles(colors);
     const route = useRoute();
     const [open, setOpen] = useState(false);
@@ -29,22 +29,27 @@ const MainScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
     const [isPanelVisible, setPanelVisible] = useState(false);
 
+    // 2. Adicionar estado para controlar o modal de erro
+    const [error, setError] = useState(null);
+
     const handleSearch = async (searchWarehouse, searchFilter) => {
         const wh = searchWarehouse || warehouseValue;
         const ft = searchFilter !== undefined ? searchFilter : filter;
         Keyboard.dismiss();
         if (!wh) {
             if (route.params?.refresh) return;
-            Alert.alert("Atenção", "Selecione um armazém para buscar.");
+            // 3. Usar o ErrorModal em vez do Alert
+            setError("Selecione um armazém para buscar.");
             return;
         }
         setLoading(true);
         try {
             const result = await api.searchItems(String(wh), ft);
             setItems(result);
-        } catch (error) {
-            handleApiError(error);
-            Alert.alert("Erro na Busca", error.message);
+        } catch (err) {
+            handleApiError(err);
+            // Pode-se usar o mesmo modal de erro para erros de busca, se desejar.
+            setError(err.message || "Erro na busca.");
         } finally {
             setLoading(false);
         }
@@ -93,13 +98,18 @@ const MainScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            {/* Este LoadingOverlay é apenas para as buscas, está correto */}
             <LoadingOverlay visible={loading} /> 
             <ProfilePanel 
                 visible={isPanelVisible}
                 onClose={() => setPanelVisible(false)}
                 onNavigateToHistory={handleNavigateToHistory}
                 onLogout={handleLogout}
+            />
+            {/* 4. Renderizar o ErrorModal */}
+            <ErrorModal
+                visible={!!error}
+                errorMessage={error}
+                onClose={() => setError(null)}
             />
 
             <View style={styles.header}>
@@ -168,6 +178,7 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.primary,
         padding: SIZES.padding,
         paddingTop: 50,
+        zIndex: 1,
     },
     topHeaderRow: {
         flexDirection: 'row',
@@ -178,6 +189,8 @@ const getStyles = (colors) => StyleSheet.create({
     pickerWrapper: {
         flex: 1,
         marginRight: 10,
+        backgroundColor: colors.inputBackground,
+        borderRadius: SIZES.radius,
     },
     dropdownContainer: {
         height: 48,
