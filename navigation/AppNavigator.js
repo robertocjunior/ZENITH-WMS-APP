@@ -9,13 +9,12 @@ import LoginScreen from '../screens/LoginScreen';
 import MainScreen from '../screens/MainScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
-import LoadingScreen from '../screens/LoadingScreen'; // 1. Importar a nova tela
+import LoadingScreen from '../screens/LoadingScreen';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
-    // 2. Usar o novo 'authStatus' para controlar a navegação
     const { authStatus, isLoading } = useAuth();
     const { colors } = useTheme();
 
@@ -29,7 +28,17 @@ const AppNavigator = () => {
 
     return (
         <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Navigator
+                // Adicionado para evitar "flash" branco na transição
+                cardStyle={{ backgroundColor: colors.background }} 
+                screenOptions={{
+                    headerShown: false,
+                    // Usa a animação de fade nativa, que é mais otimizada
+                    animation: 'fade',
+                    // Ajusta a duração para uma transição mais suave
+                    animationDuration: 300,
+                }}
+            >
                 {authStatus === 'loggedIn' ? (
                     <>
                         <Stack.Screen name="Main" component={MainScreen} />
@@ -37,10 +46,8 @@ const AppNavigator = () => {
                         <Stack.Screen name="History" component={HistoryScreen} />
                     </>
                 ) : authStatus === 'authenticating' ? (
-                    // 3. Mostrar a tela de Loading quando estiver autenticando
                     <Stack.Screen name="Loading" component={LoadingScreen} />
                 ) : (
-                    // 4. Mostrar a tela de Login quando estiver deslogado
                     <Stack.Screen name="Login" component={LoginScreen} />
                 )}
             </Stack.Navigator>
