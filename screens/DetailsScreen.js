@@ -20,7 +20,8 @@ const DetailsScreen = () => {
     const styles = getStyles(colors);
     const route = useRoute();
     const navigation = useNavigation();
-    const { permissions, handleApiError, refreshPermissions, warehouses } = useAuth();
+    // 1. A função 'refreshPermissions' que não existe foi REMOVIDA daqui.
+    const { permissions, handleApiError, warehouses } = useAuth();
     
     const { sequencia, codArm, filter } = route.params;
 
@@ -43,10 +44,8 @@ const DetailsScreen = () => {
             if (!codArm || !sequencia) return;
             setLoading(true);
             try {
-                const [detailsData] = await Promise.all([
-                    api.fetchItemDetails(String(codArm), sequencia),
-                    refreshPermissions()
-                ]);
+                // 2. A chamada para 'refreshPermissions' foi REMOVIDA daqui.
+                const detailsData = await api.fetchItemDetails(String(codArm), sequencia);
                 
                 const [codarm, seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao] = detailsData;
                 setDetails({ codarm, sequencia: seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao });
