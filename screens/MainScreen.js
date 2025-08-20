@@ -15,15 +15,15 @@ import ProfilePanel from '../components/ProfilePanel';
 import AnimatedButton from '../components/common/AnimatedButton';
 
 const MainScreen = ({ navigation }) => {
-    const { logout, handleApiError, hideInitialLoading } = useAuth();
+    // A lógica de loading inicial foi removida daqui
+    const { logout, handleApiError, warehouses } = useAuth();
     const { colors } = useTheme();
+    // ... o restante do componente permanece igual ...
     const styles = getStyles(colors);
     const route = useRoute();
-    
     const [open, setOpen] = useState(false);
     const [warehouseValue, setWarehouseValue] = useState(null);
     const [warehouseItems, setWarehouseItems] = useState([]);
-    
     const [filter, setFilter] = useState('');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -32,7 +32,6 @@ const MainScreen = ({ navigation }) => {
     const handleSearch = async (searchWarehouse, searchFilter) => {
         const wh = searchWarehouse || warehouseValue;
         const ft = searchFilter !== undefined ? searchFilter : filter;
-
         Keyboard.dismiss();
         if (!wh) {
             if (route.params?.refresh) return;
@@ -49,6 +48,20 @@ const MainScreen = ({ navigation }) => {
         } finally {
             setLoading(false);
         }
+    };
+    
+    const handleShowDetails = (sequencia) => {
+        navigation.navigate('Details', { sequencia, codArm: warehouseValue, filter: filter });
+    };
+    
+    const handleNavigateToHistory = () => {
+        setPanelVisible(false);
+        navigation.navigate('History');
+    };
+
+    const handleLogout = () => {
+        setPanelVisible(false);
+        logout();
     };
 
     useFocusEffect(
@@ -69,41 +82,19 @@ const MainScreen = ({ navigation }) => {
     );
 
     useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const whs = await api.fetchWarehouses();
-                const formattedWarehouses = whs.map(([cod, desc]) => ({
-                    label: desc,
-                    value: cod
-                }));
-                setWarehouseItems(formattedWarehouses);
-            } catch (error) {
-                handleApiError(error);
-                Alert.alert("Erro", "Não foi possível carregar os armazéns.");
-            } finally {
-                hideInitialLoading();
-            }
-        };
-        loadInitialData();
-    }, []);
-    
-    const handleShowDetails = (sequencia) => {
-        navigation.navigate('Details', { sequencia, codArm: warehouseValue, filter: filter });
-    };
-    
-    const handleNavigateToHistory = () => {
-        setPanelVisible(false);
-        navigation.navigate('History');
-    };
-
-    const handleLogout = () => {
-        setPanelVisible(false);
-        logout();
-    };
+        if (warehouses && warehouses.length > 0) {
+            const formattedWarehouses = warehouses.map(([cod, desc]) => ({
+                label: desc,
+                value: cod
+            }));
+            setWarehouseItems(formattedWarehouses);
+        }
+    }, [warehouses]);
 
     return (
         <View style={styles.container}>
-            <LoadingOverlay visible={loading} />
+            {/* Este LoadingOverlay é apenas para as buscas, está correto */}
+            <LoadingOverlay visible={loading} /> 
             <ProfilePanel 
                 visible={isPanelVisible}
                 onClose={() => setPanelVisible(false)}
