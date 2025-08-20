@@ -3,15 +3,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-
 import * as api from '../api';
 import { useAuth } from '../contexts/AuthContext';
-import { COLORS, SIZES } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { SIZES } from '../constants/theme';
 import * as SystemUI from 'expo-system-ui';
 import HistoryCard from '../components/HistoryCard';
 import AnimatedButton from '../components/common/AnimatedButton';
 
 const HistoryScreen = () => {
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
     const navigation = useNavigation();
     const { handleApiError } = useAuth();
 
@@ -21,11 +23,11 @@ const HistoryScreen = () => {
     useFocusEffect(
         useCallback(() => {
             const setSystemUIColor = async () => {
-                await SystemUI.setBackgroundColorAsync(COLORS.background);
+                await SystemUI.setBackgroundColorAsync(colors.background);
             };
             setSystemUIColor();
             fetchHistoryData();
-        }, [])
+        }, [colors])
     );
 
     const fetchHistoryData = async () => {
@@ -46,12 +48,12 @@ const HistoryScreen = () => {
             <View style={styles.container}>
                 <View style={styles.header}>
                     <AnimatedButton style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+                        <Ionicons name="arrow-back" size={24} color={colors.white} />
                         <Text style={styles.headerBackText}>Voltar</Text>
                     </AnimatedButton>
                     <Text style={styles.headerMainTitle}>Histórico de Hoje</Text>
                 </View>
-                <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+                <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
             </View>
         );
     }
@@ -60,7 +62,7 @@ const HistoryScreen = () => {
         <View style={styles.container}>
             <View style={styles.header}>
                 <AnimatedButton style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+                    <Ionicons name="arrow-back" size={24} color={colors.white} />
                     <Text style={styles.headerBackText}>Voltar</Text>
                 </AnimatedButton>
                 <Text style={styles.headerMainTitle}>Histórico de Hoje</Text>
@@ -73,7 +75,7 @@ const HistoryScreen = () => {
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={() => (
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="time-outline" size={60} color={COLORS.textLight} />
+                        <Ionicons name="time-outline" size={60} color={colors.textLight} />
                         <Text style={styles.emptyText}>Nenhuma operação hoje</Text>
                         <Text style={styles.emptySubText}>Nenhum registro foi encontrado para você na data de hoje.</Text>
                     </View>
@@ -83,13 +85,13 @@ const HistoryScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
     },
     header: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         paddingTop: Platform.OS === 'android' ? 40 : 50,
         paddingBottom: SIZES.padding,
         paddingHorizontal: SIZES.padding,
@@ -104,12 +106,12 @@ const styles = StyleSheet.create({
         paddingRight: 10,
     },
     headerBackText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: 16,
         marginLeft: 8,
     },
     headerMainTitle: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: 20,
         fontWeight: 'bold',
         position: 'absolute',
@@ -129,13 +131,13 @@ const styles = StyleSheet.create({
         marginTop: '30%',
     },
     emptyText: { 
-        color: COLORS.text, 
+        color: colors.text, 
         fontSize: 18, 
         marginTop: 15,
         fontWeight: 'bold',
     },
     emptySubText: { 
-        color: COLORS.textLight, 
+        color: colors.textLight, 
         fontSize: 14,
         textAlign: 'center',
         marginTop: 5,

@@ -1,4 +1,4 @@
-// components/common/ErrorModal.js
+// components/common/SuccessModal.js
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Modal, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -6,7 +6,7 @@ import { SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedButton from './AnimatedButton';
 
-const ErrorModal = ({ visible, errorMessage, onClose }) => {
+const SuccessModal = ({ visible, title, message, onClose }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
 
@@ -41,9 +41,9 @@ const ErrorModal = ({ visible, errorMessage, onClose }) => {
         >
             <Animated.View style={styles.overlay}>
                 <Animated.View style={[styles.modalContent, { transform: [{ scale: modalScale }] }]}>
-                    <Ionicons name="warning-outline" size={48} color={colors.danger} style={styles.icon} />
-                    <Text style={styles.title}>Ocorreu um Erro</Text>
-                    <Text style={styles.message}>{errorMessage}</Text>
+                    <Ionicons name="checkmark-circle-outline" size={48} color={colors.success} style={styles.icon} />
+                    <Text style={styles.title}>{title}</Text>
+                    <Text style={styles.message}>{message}</Text>
                     <View style={styles.buttonRow}>
                         <AnimatedButton style={[styles.button, styles.confirmButton]} onPress={onClose}>
                             <Text style={styles.buttonText}>OK</Text>
@@ -105,4 +105,4 @@ const getStyles = (colors) => StyleSheet.create({
     },
 });
 
-export default ErrorModal;
+export default SuccessModal;

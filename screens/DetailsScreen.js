@@ -5,7 +5,8 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as api from '../api';
 import { useAuth } from '../contexts/AuthContext';
-import { COLORS, SIZES } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { SIZES } from '../constants/theme';
 import { formatData } from '../utils/formatter';
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import BaixaModal from '../components/modals/BaixaModal';
@@ -14,14 +15,9 @@ import PickingModal from '../components/modals/PickingModal';
 import CorrecaoModal from '../components/modals/CorrecaoModal';
 import AnimatedButton from '../components/common/AnimatedButton';
 
-const DetailItem = ({ label, value }) => (
-    <View style={styles.detailItem}>
-        <Text style={styles.detailItemLabel}>{label}</Text>
-        <Text style={styles.detailItemValue}>{value}</Text>
-    </View>
-);
-
 const DetailsScreen = () => {
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
     const route = useRoute();
     const navigation = useNavigation();
     const { permissions, handleApiError, refreshPermissions, warehouses } = useAuth();
@@ -34,6 +30,13 @@ const DetailsScreen = () => {
     const [isTransferModalVisible, setTransferModalVisible] = useState(false);
     const [isPickingModalVisible, setPickingModalVisible] = useState(false);
     const [isCorrecaoModalVisible, setCorrecaoModalVisible] = useState(false);
+
+    const DetailItem = ({ label, value }) => (
+        <View style={styles.detailItem}>
+            <Text style={styles.detailItemLabel}>{label}</Text>
+            <Text style={styles.detailItemValue}>{value}</Text>
+        </View>
+    );
 
     useEffect(() => {
         const loadScreenData = async () => {
@@ -192,7 +195,7 @@ const DetailsScreen = () => {
             
             <View style={styles.header}>
                 <AnimatedButton style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+                    <Ionicons name="arrow-back" size={24} color={colors.white} />
                     <Text style={styles.headerBackText}>Voltar</Text>
                 </AnimatedButton>
                 <Text style={styles.headerMainTitle}>Detalhes</Text>
@@ -222,13 +225,13 @@ const DetailsScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
     },
     header: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         paddingTop: Platform.OS === 'android' ? 40 : 50,
         paddingBottom: SIZES.padding,
         paddingHorizontal: SIZES.padding,
@@ -243,12 +246,12 @@ const styles = StyleSheet.create({
         paddingRight: 10,
     },
     headerBackText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: 16,
         marginLeft: 8,
     },
     headerMainTitle: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: 20,
         fontWeight: 'bold',
         position: 'absolute',
@@ -261,7 +264,7 @@ const styles = StyleSheet.create({
         padding: SIZES.padding,
     },
     heroCard: {
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         padding: SIZES.padding * 1.5,
         borderRadius: SIZES.radius,
         alignItems: 'center',
@@ -270,51 +273,51 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     pickedHeroCard: {
-        backgroundColor: COLORS.pickingBackground,
-        borderColor: COLORS.pickingBorder,
+        backgroundColor: colors.pickingBackground,
+        borderColor: colors.pickingBorder,
     },
     heroTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
-        color: COLORS.text,
+        color: colors.text,
     },
     heroSubtitle: {
         fontSize: 14,
-        color: COLORS.textLight,
+        color: colors.textLight,
         marginTop: 5,
     },
     sectionTitle: {
         fontSize: 14,
-        color: COLORS.textLight,
+        color: colors.textLight,
         fontWeight: 'bold',
         marginBottom: 10,
         textTransform: 'uppercase',
     },
     detailItem: {
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         padding: SIZES.padding,
         borderRadius: SIZES.radius,
         marginBottom: 10,
     },
     detailItemLabel: {
         fontSize: 14,
-        color: COLORS.textLight,
+        color: colors.textLight,
     },
     detailItemValue: {
         fontSize: 18,
         fontWeight: '500',
-        color: COLORS.text,
+        color: colors.text,
         marginTop: 4,
     },
     actionsFooter: {
         padding: SIZES.padding,
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 10,
         borderTopWidth: 1,
-        borderTopColor: COLORS.border,
+        borderTopColor: colors.border,
     },
     actionButton: {
         flexGrow: 1,
@@ -325,14 +328,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     actionButtonText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: 16,
         fontWeight: 'bold',
     },
-    btnBaixar: { backgroundColor: COLORS.success },
-    btnTransferir: { backgroundColor: COLORS.info },
-    btnPicking: { backgroundColor: COLORS.orange },
-    btnCorrecao: { backgroundColor: COLORS.warning },
+    btnBaixar: { backgroundColor: colors.success },
+    btnTransferir: { backgroundColor: colors.info },
+    btnPicking: { backgroundColor: colors.orange },
+    btnCorrecao: { backgroundColor: colors.warning },
 });
 
 export default DetailsScreen;

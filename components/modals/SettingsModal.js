@@ -1,47 +1,57 @@
 // components/modals/SettingsModal.js
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Alert, Animated, Platform, Pressable } from 'react-native';
-import { COLORS, SIZES } from '../../constants/theme';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Alert, Animated, Pressable } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
+import { SIZES } from '../../constants/theme';
 import AnimatedButton from '../common/AnimatedButton';
 
 const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
+    const { colors, themePreference, changeTheme } = useTheme();
+    const styles = getStyles(colors);
+
     const [apiUrl, setApiUrl] = useState('');
-    
     const [isModalVisible, setIsModalVisible] = useState(visible);
     const modalOpacity = useRef(new Animated.Value(0)).current;
     const modalScale = useRef(new Animated.Value(0.9)).current;
-
-    // 1. Adicionar a mesma lógica de animação do teclado da tela de login
     const keyboardHeightAnim = useRef(new Animated.Value(0)).current;
+
+    // CORREÇÃO: O componente ThemeOptionButton foi movido para dentro do SettingsModal
+    // para que ele possa acessar a variável 'styles'.
+    const ThemeOptionButton = ({ label, onPress, isActive }) => {
+        return (
+            <AnimatedButton
+                onPress={onPress}
+                style={[
+                    styles.themeButton,
+                    { backgroundColor: isActive ? colors.primary : colors.buttonSecondaryBackground }
+                ]}
+            >
+                <Text style={[
+                    styles.themeButtonText,
+                    { color: isActive ? colors.white : colors.text }
+                ]}>
+                    {label}
+                </Text>
+            </AnimatedButton>
+        );
+    };
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            (e) => {
-                Animated.timing(keyboardHeightAnim, {
-                    toValue: e.endCoordinates.height,
-                    duration: 250,
-                    useNativeDriver: false,
-                }).start();
+            'keyboardDidShow', (e) => {
+                Animated.timing(keyboardHeightAnim, { toValue: e.endCoordinates.height, duration: 250, useNativeDriver: false }).start();
             }
         );
         const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide',
-            () => {
-                Animated.timing(keyboardHeightAnim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: false,
-                }).start();
+            'keyboardDidHide', () => {
+                Animated.timing(keyboardHeightAnim, { toValue: 0, duration: 200, useNativeDriver: false }).start();
             }
         );
-
         return () => {
             keyboardDidHideListener.remove();
             keyboardDidShowListener.remove();
         };
     }, []);
-
 
     useEffect(() => {
         if (visible) {
@@ -75,7 +85,7 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
         Keyboard.dismiss();
         onClose();
     };
-    
+
     return (
         <Modal
             animationType="none"
@@ -86,19 +96,25 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
         >
             <Animated.View style={[styles.overlay, { opacity: modalOpacity }]}>
                 <Pressable style={styles.pressableOverlay} onPress={handleClose}>
-                     {/* 2. Aplicar o paddingBottom animado a este container */}
                     <Animated.View style={[styles.centeringContainer, { paddingBottom: keyboardHeightAnim }]}>
                         <Animated.View style={[styles.modalContent, { transform: [{ scale: modalScale }] }]}>
-                            {/* Adicionado um Pressable para o conteúdo não fechar ao ser tocado */}
                             <Pressable onPress={(e) => e.stopPropagation()}>
-                                <Text style={styles.title}>Configurações do Servidor</Text>
+                                <Text style={styles.title}>Configurações</Text>
+                                
+                                <Text style={styles.label}>Tema</Text>
+                                <View style={styles.themeSelectorContainer}>
+                                    <ThemeOptionButton label="Automático" onPress={() => changeTheme('automatic')} isActive={themePreference === 'automatic'} />
+                                    <ThemeOptionButton label="Claro" onPress={() => changeTheme('light')} isActive={themePreference === 'light'} />
+                                    <ThemeOptionButton label="Escuro" onPress={() => changeTheme('dark')} isActive={themePreference === 'dark'} />
+                                </View>
+                                
                                 <Text style={styles.label}>Endereço da API do Backend:</Text>
                                 <TextInput
                                     style={styles.input}
                                     value={apiUrl}
                                     onChangeText={setApiUrl}
                                     placeholder="http://192.168.1.10:3030"
-                                    placeholderTextColor={COLORS.textLight}
+                                    placeholderTextColor={colors.textLight}
                                     autoCapitalize="none"
                                     keyboardType="url"
                                     autoFocus={true}
@@ -120,7 +136,7 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.6)',
@@ -129,7 +145,6 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
     },
-    // Container que será animado para cima
     centeringContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -139,31 +154,47 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxWidth: 400,
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
     },
-    title: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 20, },
-    label: { fontSize: 14, color: COLORS.textLight, marginBottom: 5, },
+    title: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 20, },
+    label: { fontSize: 14, color: colors.textLight, marginBottom: 10, },
     input: {
         width: '100%', 
         padding: 12, 
         fontSize: 16, 
         borderRadius: SIZES.radius, 
         borderWidth: 1, 
-        borderColor: COLORS.border, 
+        borderColor: colors.border, 
         marginBottom: 25,
-        backgroundColor: COLORS.inputBackground,
-        color: COLORS.text,
+        backgroundColor: colors.inputBackground,
+        color: colors.text,
     },
     buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
     cancelButton: {
-        backgroundColor: COLORS.buttonSecondaryBackground, 
+        backgroundColor: colors.buttonSecondaryBackground, 
     },
-    cancelButtonText: { color: COLORS.text, fontSize: 16, fontWeight: '500', },
-    confirmButton: { backgroundColor: COLORS.primary, },
-    confirmButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '500', },
+    cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500', },
+    confirmButton: { backgroundColor: colors.primary, },
+    confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500', },
+    themeSelectorContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 25,
+        gap: 10,
+    },
+    themeButton: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: SIZES.radius,
+        alignItems: 'center',
+    },
+    themeButtonText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
 });
 
 export default SettingsModal;

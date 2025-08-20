@@ -2,9 +2,10 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Modal, StyleSheet, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const LoadingOverlay = ({ visible }) => {
+    const { colors } = useTheme();
     const rotationAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -40,7 +41,7 @@ const LoadingOverlay = ({ visible }) => {
         >
             <View style={styles.overlay}>
                 <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                    <Ionicons name="reload-circle-outline" size={64} color={COLORS.primary} />
+                    <Ionicons name="reload-circle-outline" size={64} color={colors.primary} />
                 </Animated.View>
             </View>
         </Modal>

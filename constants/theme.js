@@ -1,9 +1,7 @@
 // constants/theme.js
 import { Appearance } from 'react-native';
 
-const colorScheme = Appearance.getColorScheme();
-
-const lightColors = {
+export const lightColors = {
     primary: '#00529B',
     secondary: '#00A3E0',
     background: '#f0f2f5',
@@ -34,7 +32,7 @@ const lightColors = {
     logoName: require('../assets/icons/name.png'),
 };
 
-const darkColors = {
+export const darkColors = {
     primary: '#007bff',
     secondary: '#00A3E0',
     background: '#121212',
@@ -65,8 +63,6 @@ const darkColors = {
     logo512x512: require('../assets/icons/icon512x512-dark.png'),
     logoName: require('../assets/icons/name-dark.png'),
 };
-
-export const COLORS = colorScheme === 'dark' ? darkColors : lightColors;
 
 export const SIZES = {
     padding: 15,

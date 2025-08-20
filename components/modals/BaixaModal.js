@@ -1,10 +1,13 @@
 // components/modals/BaixaModal.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable } from 'react-native';
-import { COLORS, SIZES } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { SIZES } from '../../constants/theme';
 import AnimatedButton from '../common/AnimatedButton';
 
 const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
     const [quantity, setQuantity] = useState('');
 
     useEffect(() => {
@@ -30,6 +33,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
             transparent={true}
             visible={visible}
             onRequestClose={onClose}
+            statusBarTranslucent={true}
         >
             <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
                 <View style={styles.modalContent}>
@@ -45,7 +49,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                         onChangeText={setQuantity}
                         keyboardType="numeric"
                         placeholder="Digite a quantidade"
-                        placeholderTextColor={COLORS.textLight}
+                        placeholderTextColor={colors.textLight}
                         autoFocus={true}
                     />
 
@@ -63,7 +67,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.6)',
@@ -74,24 +78,24 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxWidth: 400,
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: COLORS.text,
+        color: colors.text,
         marginBottom: 10,
     },
     infoText: {
         fontSize: 16,
-        color: COLORS.textLight,
+        color: colors.textLight,
         marginBottom: 20,
     },
     label: {
         fontSize: 14,
-        color: COLORS.textLight,
+        color: colors.textLight,
         marginBottom: 5,
     },
     input: {
@@ -100,10 +104,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         borderRadius: SIZES.radius,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
         marginBottom: 25,
-        backgroundColor: COLORS.inputBackground,
-        color: COLORS.text,
+        backgroundColor: colors.inputBackground,
+        color: colors.text,
     },
     buttonRow: {
         flexDirection: 'row',
@@ -116,18 +120,18 @@ const styles = StyleSheet.create({
         borderRadius: SIZES.radius,
     },
     cancelButton: {
-        backgroundColor: COLORS.buttonSecondaryBackground,
+        backgroundColor: colors.buttonSecondaryBackground,
     },
     cancelButtonText: {
-        color: COLORS.text,
+        color: colors.text,
         fontSize: 16,
         fontWeight: '500',
     },
     confirmButton: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
     },
     confirmButtonText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: 16,
         fontWeight: '500',
     },

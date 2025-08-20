@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Alert, Keyboard } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import * as api from '../api';
-import { COLORS, SIZES } from '../constants/theme';
+import { SIZES } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import * as SystemUI from 'expo-system-ui';
@@ -15,6 +16,8 @@ import AnimatedButton from '../components/common/AnimatedButton';
 
 const MainScreen = ({ navigation }) => {
     const { logout, handleApiError, hideInitialLoading } = useAuth();
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
     const route = useRoute();
     
     const [open, setOpen] = useState(false);
@@ -51,7 +54,7 @@ const MainScreen = ({ navigation }) => {
     useFocusEffect(
         useCallback(() => {
             const setSystemUIColor = async () => {
-                await SystemUI.setBackgroundColorAsync(COLORS.background);
+                await SystemUI.setBackgroundColorAsync(colors.background);
             };
             setSystemUIColor();
 
@@ -62,7 +65,7 @@ const MainScreen = ({ navigation }) => {
                 handleSearch(refreshWh, refreshFt);
                 navigation.setParams({ refresh: false });
             }
-        }, [route.params?.refresh])
+        }, [route.params?.refresh, colors])
     );
 
     useEffect(() => {
@@ -121,24 +124,25 @@ const MainScreen = ({ navigation }) => {
                             placeholder="Selecione um Armazém"
                             style={styles.dropdownPicker}
                             containerStyle={styles.dropdownContainer}
-                            dropDownContainerStyle={[styles.dropdownList, { backgroundColor: COLORS.cardBackground }]}
-                            textStyle={{ color: COLORS.text }}
-                            listItemLabelStyle={{ color: COLORS.text }}
+                            dropDownContainerStyle={[styles.dropdownList, { backgroundColor: colors.cardBackground }]}
+                            textStyle={{ color: colors.text }}
+                            listItemLabelStyle={{ color: colors.text }}
                             zIndex={3000}
                             zIndexInverse={1000}
+                            theme={colors.background === '#121212' ? "DARK" : "LIGHT"}
                         />
                     </View>
                     <AnimatedButton style={styles.profileButton} onPress={() => setPanelVisible(true)}>
-                        <Ionicons name="person-circle-outline" size={32} color={COLORS.headerIcon} />
+                        <Ionicons name="person-circle-outline" size={32} color={colors.headerIcon} />
                     </AnimatedButton>
                 </View>
                 <View style={styles.searchBar}>
                     <View style={styles.searchInputWrapper}>
-                        <Ionicons name="search" size={20} color={COLORS.textLight} style={{marginLeft: 10}} />
+                        <Ionicons name="search" size={20} color={colors.textLight} style={{marginLeft: 10}} />
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Buscar..."
-                            placeholderTextColor={COLORS.textLight}
+                            placeholderTextColor={colors.textLight}
                             value={filter}
                             onChangeText={setFilter}
                             onSubmitEditing={() => handleSearch()}
@@ -157,7 +161,7 @@ const MainScreen = ({ navigation }) => {
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={() => (
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="home-outline" size={60} color={COLORS.textLight} />
+                        <Ionicons name="home-outline" size={60} color={colors.textLight} />
                         <Text style={styles.emptyText}>Nenhum resultado para exibir</Text>
                         <Text style={styles.emptySubText}>Selecione um armazém para começar</Text>
                     </View>
@@ -167,10 +171,10 @@ const MainScreen = ({ navigation }) => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.background },
+const getStyles = (colors) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
     header: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         padding: SIZES.padding,
         paddingTop: 50,
     },
@@ -183,22 +187,17 @@ const styles = StyleSheet.create({
     pickerWrapper: {
         flex: 1,
         marginRight: 10,
-        borderRadius: SIZES.radius,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        backgroundColor: COLORS.inputBackground,
-        height: 48,
-        justifyContent: 'center',
     },
     dropdownContainer: {
         height: 48,
     },
     dropdownPicker: {
-        borderWidth: 0,
-        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.inputBackground,
     },
     dropdownList: {
-        borderColor: COLORS.border,
+        borderColor: colors.border,
     },
     profileButton: {
         padding: 5,
@@ -212,7 +211,7 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.inputBackground,
+        backgroundColor: colors.inputBackground,
         borderRadius: SIZES.radius,
         height: 48,
     },
@@ -220,10 +219,10 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: SIZES.padding / 2,
         fontSize: 16,
-        color: COLORS.text,
+        color: colors.text,
     },
     searchButton: {
-        backgroundColor: COLORS.secondary,
+        backgroundColor: colors.secondary,
         height: 48,
         justifyContent: 'center',
         alignItems: 'center',
@@ -231,7 +230,7 @@ const styles = StyleSheet.create({
         borderRadius: SIZES.radius,
     },
     searchButtonText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: 16,
         fontWeight: '500',
     },
@@ -242,8 +241,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingTop: '30%',
     },
-    emptyText: { color: COLORS.textLight, fontSize: 18, marginTop: 15 },
-    emptySubText: { color: COLORS.textLight, fontSize: 14 }
+    emptyText: { color: colors.textLight, fontSize: 18, marginTop: 15 },
+    emptySubText: { color: colors.textLight, fontSize: 14 }
 });
 
 export default MainScreen;

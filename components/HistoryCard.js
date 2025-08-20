@@ -2,9 +2,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { SIZES } from '../constants/theme';
 
 const HistoryCard = ({ item }) => {
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
+
     const [tipo, , hora, codarm, seqend, armdes, enddes, codprod, descrprod, marca, derivacao, quantAnt, qtdAtual, idOperacao] = item;
 
     const isCorrection = tipo === 'CORRECAO';
@@ -26,7 +30,7 @@ const HistoryCard = ({ item }) => {
                             <Text style={styles.quantityLabel}>Qtd. Anterior</Text>
                             <Text style={[styles.quantityValue, styles.quantityBefore]}>{quantAnt}</Text>
                         </View>
-                        <Ionicons name="arrow-forward" size={24} color={isCorrection ? COLORS.correctionHeader : COLORS.primary} />
+                        <Ionicons name="arrow-forward" size={24} color={isCorrection ? colors.correctionHeader : colors.primary} />
                         <View style={styles.quantityBox}>
                             <Text style={styles.quantityLabel}>Qtd. Corrigida</Text>
                             <Text style={[styles.quantityValue, styles.quantityAfter]}>{qtdAtual}</Text>
@@ -43,7 +47,7 @@ const HistoryCard = ({ item }) => {
                         <Text style={styles.locationLabel}>Origem</Text>
                         <Text style={styles.locationText}>{codarm} → {seqend}</Text>
                     </View>
-                    <Ionicons name="arrow-forward" size={24} color={COLORS.primary} />
+                    <Ionicons name="arrow-forward" size={24} color={colors.primary} />
                     <View style={styles.locationOriginDest}>
                         <Text style={styles.locationLabel}>Destino</Text>
                         <Text style={styles.locationText}>{armdes} → {enddes}</Text>
@@ -79,7 +83,7 @@ const HistoryCard = ({ item }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     card: {
         borderRadius: SIZES.radius,
         padding: SIZES.padding,
@@ -87,24 +91,24 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     operationCard: {
-        backgroundColor: COLORS.historyBackground,
-        borderColor: COLORS.historyBorder,
+        backgroundColor: colors.historyBackground,
+        borderColor: colors.historyBorder,
     },
     correctionCard: {
-        backgroundColor: COLORS.correctionBackground,
-        borderColor: COLORS.correctionBorder,
+        backgroundColor: colors.correctionBackground,
+        borderColor: colors.correctionBorder,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingBottom: 10,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        borderBottomColor: colors.border,
         marginBottom: 15,
     },
     headerId: {
         fontSize: 16,
-        color: COLORS.primary,
+        color: colors.primary,
         fontWeight: '500',
     },
     headerIdBold: {
@@ -112,10 +116,10 @@ const styles = StyleSheet.create({
     },
     headerTime: {
         fontSize: 14,
-        color: COLORS.textLight,
+        color: colors.textLight,
     },
     correctionHeaderText: {
-        color: COLORS.correctionHeader,
+        color: colors.correctionHeader,
     },
     cardBody: {
         gap: 15,
@@ -127,33 +131,33 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
-        color: COLORS.text,
+        color: colors.text,
     },
-    productCode: { // <-- ALTERAÇÕES AQUI
+    productCode: {
         fontSize: 12,
-        backgroundColor: COLORS.inputBackground,
+        backgroundColor: colors.inputBackground,
         paddingVertical: 2,
         paddingHorizontal: 6,
         borderRadius: 4,
         marginTop: 5,
-        color: COLORS.textLight,
+        color: colors.textLight,
         overflow: 'hidden'
     },
-    locationBox: { // <-- ALTERAÇÕES AQUI
-        backgroundColor: COLORS.background,
+    locationBox: {
+        backgroundColor: colors.background,
         padding: SIZES.padding,
         borderRadius: SIZES.radius,
         alignItems: 'center',
     },
     locationLabel: {
         fontSize: 12,
-        color: COLORS.textLight,
+        color: colors.textLight,
         marginBottom: 2,
     },
     locationText: {
         fontSize: 16,
         fontWeight: '500',
-        color: COLORS.text,
+        color: colors.text,
     },
     movementBox: {
         flexDirection: 'row',
@@ -161,17 +165,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     quantityBox: {
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         padding: SIZES.padding,
         borderRadius: SIZES.radius,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
         alignItems: 'center',
         flex: 1,
     },
     quantityLabel: {
         fontSize: 12,
-        color: COLORS.textLight,
+        color: colors.textLight,
     },
     quantityValue: {
         fontSize: 20,
@@ -179,10 +183,10 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     quantityBefore: {
-        color: COLORS.danger,
+        color: colors.danger,
     },
     quantityAfter: {
-        color: COLORS.success,
+        color: colors.success,
     },
     locationOriginDest: {
         flex: 1,

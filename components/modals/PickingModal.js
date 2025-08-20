@@ -1,12 +1,15 @@
 // components/modals/PickingModal.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable } from 'react-native';
-import { COLORS, SIZES } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { SIZES } from '../../constants/theme';
 import DropDownPicker from 'react-native-dropdown-picker';
 import * as api from '../../api';
 import AnimatedButton from '../common/AnimatedButton';
 
 const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
     const [quantity, setQuantity] = useState('');
     
     const [open, setOpen] = useState(false);
@@ -71,6 +74,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
             transparent={true}
             visible={visible}
             onRequestClose={onClose}
+            statusBarTranslucent={true}
         >
             <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
                 <View style={styles.modalContent}>
@@ -95,11 +99,12 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                         disabled={isLoadingLocations}
                         style={styles.dropdownPicker}
                         containerStyle={styles.dropdownContainer}
-                        dropDownContainerStyle={[styles.dropdownList, { backgroundColor: COLORS.cardBackground }]}
-                        textStyle={{ color: COLORS.text }}
-                        listItemLabelStyle={{ color: COLORS.text }}
+                        dropDownContainerStyle={[styles.dropdownList, { backgroundColor: colors.cardBackground }]}
+                        textStyle={{ color: colors.text }}
+                        listItemLabelStyle={{ color: colors.text }}
                         zIndex={3000}
                         zIndexInverse={1000}
+                        theme={colors.background === '#121212' ? "DARK" : "LIGHT"}
                     />
 
                     <View style={styles.buttonRow}>
@@ -116,7 +121,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.6)',
@@ -127,38 +132,38 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxWidth: 400,
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
     },
-    title: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, marginBottom: 10, },
-    infoText: { fontSize: 16, color: COLORS.textLight, marginBottom: 20, },
-    label: { fontSize: 14, color: COLORS.textLight, marginBottom: 5, },
+    title: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 10, },
+    infoText: { fontSize: 16, color: colors.textLight, marginBottom: 20, },
+    label: { fontSize: 14, color: colors.textLight, marginBottom: 5, },
     input: {
         width: '100%', 
         padding: 12, 
         fontSize: 16, 
         borderRadius: SIZES.radius, 
         borderWidth: 1, 
-        borderColor: COLORS.border, 
+        borderColor: colors.border, 
         marginBottom: 15,
-        backgroundColor: COLORS.inputBackground,
-        color: COLORS.text,
+        backgroundColor: colors.inputBackground,
+        color: colors.text,
     },
     dropdownContainer: { marginBottom: 25 },
     dropdownPicker: {
-        borderColor: COLORS.border,
-        backgroundColor: COLORS.inputBackground
+        borderColor: colors.border,
+        backgroundColor: colors.inputBackground
     },
-    dropdownList: { borderColor: COLORS.border },
+    dropdownList: { borderColor: colors.border },
     buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
     cancelButton: {
-        backgroundColor: COLORS.buttonSecondaryBackground, 
+        backgroundColor: colors.buttonSecondaryBackground, 
     },
-    cancelButtonText: { color: COLORS.text, fontSize: 16, fontWeight: '500', },
-    confirmButton: { backgroundColor: COLORS.primary, },
-    confirmButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '500', },
+    cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500', },
+    confirmButton: { backgroundColor: colors.primary, },
+    confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500', },
 });
 
 export default PickingModal;

@@ -3,13 +3,17 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
-import { COLORS, SIZES } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { SIZES } from '../constants/theme';
 import AnimatedButton from './common/AnimatedButton';
 
 const { width } = Dimensions.get('window');
 
 const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
     const { userSession } = useAuth();
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
+
     const slideAnim = useRef(new Animated.Value(width)).current;
     const panelWidth = Math.min(width * 0.85, 320);
     const panelVisiblePosition = width - panelWidth;
@@ -44,6 +48,7 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
             transparent={true}
             visible={visible}
             onRequestClose={handleClose}
+            statusBarTranslucent={true}
         >
             <Pressable style={styles.overlay} onPress={handleClose}>
                 <Animated.View
@@ -56,28 +61,28 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
                         <View>
                             <View style={styles.panelHeader}>
                                 <View style={styles.userInfo}>
-                                    <Ionicons name="person-circle" size={24} color={COLORS.primary} />
+                                    <Ionicons name="person-circle" size={24} color={colors.primary} />
                                     <Text style={styles.userInfoText}>
                                         {userSession ? `${userSession.codusu} - ${userSession.username}` : ''}
                                     </Text>
                                 </View>
                                 <AnimatedButton onPress={handleClose}>
-                                    <Ionicons name="close" size={28} color={COLORS.textLight} />
+                                    <Ionicons name="close" size={28} color={colors.textLight} />
                                 </AnimatedButton>
                             </View>
 
                             <View style={styles.panelBody}>
                                 <AnimatedButton style={styles.panelButton} onPress={onNavigateToHistory}>
-                                    <Ionicons name="time-outline" size={22} color={COLORS.text} />
+                                    <Ionicons name="time-outline" size={22} color={colors.text} />
                                     <Text style={styles.panelButtonText}>Histórico de Operações</Text>
                                 </AnimatedButton>
                             </View>
                         </View>
 
                         <View style={styles.panelFooter}>
-                            <AnimatedButton style={[styles.panelButton, styles.logoutButton]} onPress={onLogout}>
-                                <Ionicons name="log-out-outline" size={22} color={COLORS.danger} />
-                                <Text style={[styles.panelButtonText, { color: COLORS.danger }]}>Sair</Text>
+                            <AnimatedButton style={styles.panelButton} onPress={onLogout}>
+                                <Ionicons name="log-out-outline" size={22} color={colors.danger} />
+                                <Text style={[styles.panelButtonText, { color: colors.danger }]}>Sair</Text>
                             </AnimatedButton>
                         </View>
                     </Pressable>
@@ -87,14 +92,14 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     panel: {
         height: '100%',
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         position: 'absolute',
         top: 0,
         left: 0,
@@ -109,7 +114,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: SIZES.padding,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        borderBottomColor: colors.border,
     },
     userInfo: {
         flexDirection: 'row',
@@ -119,7 +124,7 @@ const styles = StyleSheet.create({
     userInfoText: {
         fontSize: 16,
         fontWeight: '600',
-        color: COLORS.primary,
+        color: colors.primary,
     },
     panelBody: {
         padding: SIZES.padding / 2,
@@ -127,7 +132,7 @@ const styles = StyleSheet.create({
     panelFooter: {
         padding: SIZES.padding,
         borderTopWidth: 1,
-        borderTopColor: COLORS.border,
+        borderTopColor: colors.border,
     },
     panelButton: {
         flexDirection: 'row',
@@ -138,9 +143,8 @@ const styles = StyleSheet.create({
     },
     panelButtonText: {
         fontSize: 16,
-        color: COLORS.text,
+        color: colors.text,
     },
-    logoutButton: {},
 });
 
 export default ProfilePanel;

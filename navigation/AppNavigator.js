@@ -3,23 +3,25 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext'; // 1. Importar o hook do tema
 
 import LoginScreen from '../screens/LoginScreen';
 import MainScreen from '../screens/MainScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
-import { ActivityIndicator, View } from 'react-native';
-import { COLORS } from '../constants/theme';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
     const { isAuthenticated, isLoading } = useAuth();
+    const { colors } = useTheme(); // 2. Obter as cores do contexto
 
     if (isLoading) {
+        // O loading inicial do app também respeita o tema
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
@@ -40,5 +42,13 @@ const AppNavigator = () => {
         </NavigationContainer>
     );
 };
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
+})
 
 export default AppNavigator;

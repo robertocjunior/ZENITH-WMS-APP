@@ -1,11 +1,15 @@
 // components/ResultCard.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SIZES } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { SIZES } from '../constants/theme';
 import { formatData } from '../utils/formatter';
 import AnimatedButton from './common/AnimatedButton';
 
 const ResultCard = ({ item, onPress }) => {
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
+
     const [sequencia, rua, predio, , codprod, descrprod, marca, datval, , endpic, qtdCompleta, derivacao] = item;
     
     let displayDesc = descrprod || 'Sem descrição';
@@ -34,19 +38,19 @@ const ResultCard = ({ item, onPress }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     card: {
-        backgroundColor: COLORS.cardBackground,
+        backgroundColor: colors.cardBackground,
         borderRadius: SIZES.radius,
         padding: SIZES.padding,
         marginBottom: SIZES.padding,
         borderWidth: 1,
-        borderColor: COLORS.border,
-        alignItems: 'stretch', // Garante que o conteúdo interno se alinhe corretamente
+        borderColor: colors.border,
+        alignItems: 'stretch',
     },
     pickingCard: {
-        backgroundColor: COLORS.pickingBackground,
-        borderColor: COLORS.pickingBorder,
+        backgroundColor: colors.pickingBackground,
+        borderColor: colors.pickingBorder,
     },
     header: {
         flexDirection: 'row',
@@ -62,20 +66,20 @@ const styles = StyleSheet.create({
         alignItems: 'baseline',
     },
     textLight: {
-        color: COLORS.textLight,
+        color: colors.textLight,
     },
     bold: {
         fontWeight: 'bold',
-        color: COLORS.text
+        color: colors.text
     },
     productDesc: {
         fontSize: 16,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
     },
     productCode: {
-        backgroundColor: COLORS.inputBackground,
-        color: COLORS.textLight,
+        backgroundColor: colors.inputBackground,
+        color: colors.textLight,
         paddingVertical: 3,
         paddingHorizontal: 8,
         borderRadius: 4,
@@ -84,7 +88,7 @@ const styles = StyleSheet.create({
     },
     validity: {
         fontWeight: '600',
-        color: COLORS.primary
+        color: colors.primary
     }
 });
 
