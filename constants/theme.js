@@ -30,6 +30,8 @@ const lightColors = {
     correctionBackground: '#fff8e1',
     correctionBorder: '#ffecb3',
     correctionHeader: '#c09b00',
+    logo512x512: require('../assets/icons/icon512x512.png'),
+    logoName: require('../assets/icons/name.png'),
 };
 
 const darkColors = {
@@ -60,6 +62,8 @@ const darkColors = {
     correctionBackground: '#4d452d',
     correctionBorder: '#8c7e5a',
     correctionHeader: '#e0c466',
+    logo512x512: require('../assets/icons/icon512x512-dark.png'),
+    logoName: require('../assets/icons/name-dark.png'),
 };
 
 export const COLORS = colorScheme === 'dark' ? darkColors : lightColors;

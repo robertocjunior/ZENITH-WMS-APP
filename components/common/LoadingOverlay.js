@@ -36,6 +36,7 @@ const LoadingOverlay = ({ visible }) => {
             animationType="fade"
             transparent={true}
             visible={visible}
+            statusBarTranslucent={true}
         >
             <View style={styles.overlay}>
                 <Animated.View style={{ transform: [{ rotate: spin }] }}>

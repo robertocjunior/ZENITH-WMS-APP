@@ -1,6 +1,6 @@
 // screens/MainScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Alert, ActivityIndicator, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, Alert, Keyboard } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../api';
 import { COLORS, SIZES } from '../constants/theme';
@@ -14,7 +14,7 @@ import ProfilePanel from '../components/ProfilePanel';
 import AnimatedButton from '../components/common/AnimatedButton';
 
 const MainScreen = ({ navigation }) => {
-    const { logout, handleApiError } = useAuth();
+    const { logout, handleApiError, hideInitialLoading } = useAuth();
     const route = useRoute();
     
     const [open, setOpen] = useState(false);
@@ -24,7 +24,6 @@ const MainScreen = ({ navigation }) => {
     const [filter, setFilter] = useState('');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [initialLoading, setInitialLoading] = useState(true);
     const [isPanelVisible, setPanelVisible] = useState(false);
 
     const handleSearch = async (searchWarehouse, searchFilter) => {
@@ -79,7 +78,7 @@ const MainScreen = ({ navigation }) => {
                 handleApiError(error);
                 Alert.alert("Erro", "Não foi possível carregar os armazéns.");
             } finally {
-                setInitialLoading(false);
+                hideInitialLoading();
             }
         };
         loadInitialData();
@@ -98,10 +97,6 @@ const MainScreen = ({ navigation }) => {
         setPanelVisible(false);
         logout();
     };
-
-    if (initialLoading) {
-        return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
-    }
 
     return (
         <View style={styles.container}>
@@ -134,7 +129,6 @@ const MainScreen = ({ navigation }) => {
                         />
                     </View>
                     <AnimatedButton style={styles.profileButton} onPress={() => setPanelVisible(true)}>
-                        {/* AQUI A COR FOI ALTERADA */}
                         <Ionicons name="person-circle-outline" size={32} color={COLORS.headerIcon} />
                     </AnimatedButton>
                 </View>

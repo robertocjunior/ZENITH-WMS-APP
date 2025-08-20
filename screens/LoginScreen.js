@@ -13,7 +13,7 @@ import AnimatedButton from '../components/common/AnimatedButton';
 const LoginScreen = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [isButtonLoading, setIsButtonLoading] = useState(false); // <-- Novo estado local para o botão
     const [isPasswordVisible, setPasswordVisible] = useState(false);
     const { login } = useAuth();
     
@@ -77,19 +77,17 @@ const LoginScreen = () => {
     const handleLogin = async () => {
         Keyboard.dismiss();
         if (!username || !password) {
-            // A linha abaixo foi removida para usar o modal global
-            // Alert.alert("Erro", "Por favor, preencha o usuário e a senha.");
             return;
         }
-        setLoading(true);
+        setIsButtonLoading(true); // <-- Ativa o loading do botão
         try {
             await login(username, password);
+            // O loading do botão será desativado no 'finally'
         } catch (error) {
-            // A linha abaixo foi removida. O AuthContext vai capturar o erro.
-            // Alert.alert("Falha no Login", error.message);
+            // O AuthContext já lida com o erro, aqui não precisamos fazer nada
             console.log("Login failed, context will handle error display");
         } finally {
-            setLoading(false);
+            setIsButtonLoading(false); // <-- Desativa o loading do botão em qualquer cenário
         }
     };
     
@@ -135,8 +133,8 @@ const LoginScreen = () => {
                             </AnimatedButton>
                         </View>
                         
-                        <AnimatedButton style={styles.button} onPress={handleLogin} disabled={loading}>
-                            {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
+                        <AnimatedButton style={styles.button} onPress={handleLogin} disabled={isButtonLoading}>
+                            {isButtonLoading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
                         </AnimatedButton>
                     </View>
                 </Animated.View>

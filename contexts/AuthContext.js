@@ -9,7 +9,8 @@ export const AuthProvider = ({ children }) => {
     const [userSession, setUserSession] = useState(null);
     const [permissions, setPermissions] = useState(null);
     const [warehouses, setWarehouses] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true); // Mantém o loading inicial do app
+    const [loading, setLoading] = useState(false); // Novo loading para transições (login/logout)
     const [apiError, setApiError] = useState(null);
 
     // Este useEffect carrega a sessão salva ao iniciar o app
@@ -18,62 +19,69 @@ export const AuthProvider = ({ children }) => {
             try {
                 const sessionData = await AsyncStorage.getItem('userSession');
                 if (sessionData) {
-                    setUserSession(JSON.parse(sessionData));
-                    // Não precisamos chamar setAuthHeader, sua API já lida com isso.
-                    
-                    const [perms, whs] = await Promise.all([api.fetchPermissions(), api.fetchWarehouses()]);
-                    setPermissions(perms);
-                    setWarehouses(whs);
+                    const parsedData = JSON.parse(sessionData);
+                    // Restaura todos os dados da sessão salva
+                    setUserSession(parsedData.userSession);
+                    setPermissions(parsedData.permissions);
+                    setWarehouses(parsedData.warehouses);
                 }
             } catch (e) {
                 console.error("Falha ao restaurar sessão:", e);
-                // Se der erro ao carregar os dados, limpa tudo por segurança
-                await logout();
+                await AsyncStorage.removeItem('userSession'); // Limpa dados corrompidos
             } finally {
                 setIsLoading(false);
             }
         };
-        // Inicializa a URL da API primeiro, depois verifica o login
         api.initializeApiUrl().then(checkLogin);
     }, []);
 
     const login = async (username, password) => {
-        // Envolvemos a sua lógica original de login com o try...catch
+        // Não inicia o loading global aqui!
+        setApiError(null); // Limpa erros anteriores
         try {
-            // A função api.login já salva o token e a sessão no AsyncStorage
             const response = await api.login(username, password);
             setUserSession(response);
 
-            // Após o login, buscamos as permissões e armazéns
             const [perms, whs] = await Promise.all([api.fetchPermissions(), api.fetchWarehouses()]);
             setPermissions(perms);
             setWarehouses(whs);
+            
+            const sessionToSave = { userSession: response, permissions: perms, warehouses: whs };
+            await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
+
+            setLoading(true); // <-- Ativa o loading global APÓS o sucesso do login.
 
         } catch (error) {
-            // Se api.login falhar, chamamos nosso modal de erro!
+            // setLoading já é false, então não precisa mudar.
             handleApiError(error);
-            // E relançamos o erro para a LoginScreen parar o "loading"
             throw error;
         }
     };
+    
+    // Nova função para a MainScreen chamar quando estiver pronta
+    const hideInitialLoading = () => {
+        setLoading(false);
+    };
 
     const logout = async () => {
+        setLoading(true); // Ativa o loading durante o logout para uma melhor UX
         try {
-            // A api.logout já remove o token do AsyncStorage
             await api.logout();
         } catch (error) {
             console.error("Erro no logout:", error.message);
         } finally {
-            // Apenas limpamos o estado no contexto
             setUserSession(null);
             setPermissions(null);
             setWarehouses([]);
+            await AsyncStorage.removeItem('userSession');
+            setLoading(false); // Desativa o loading ao final
         }
     };
 
     const handleApiError = (error) => {
         // Se o erro for de token inválido (401), desloga o usuário
-        if (error.message === '401') {
+        if (error.response && error.response.status === 401) {
+            setApiError("Sua sessão expirou. Por favor, faça login novamente.");
             logout();
         } else {
             // Para outros erros, define a mensagem para o nosso modal
@@ -81,7 +89,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
     
-    // As outras funções permanecem como estavam
     const refreshPermissions = async () => {
         try {
             const perms = await api.fetchPermissions();
@@ -95,7 +102,9 @@ export const AuthProvider = ({ children }) => {
         userSession,
         permissions,
         warehouses,
-        isLoading,
+        isLoading, // Loading inicial do app
+        loading,   // Novo loading para transições
+        hideInitialLoading, // Nova função para parar o loading
         isAuthenticated: !!userSession,
         apiError,
         clearApiError: () => setApiError(null),

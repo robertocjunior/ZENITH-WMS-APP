@@ -3,13 +3,14 @@ import React from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AppNavigator from './navigation/AppNavigator';
 import ErrorModal from './components/common/ErrorModal'; // <-- Importe o novo modal
+import LoadingOverlay from './components/common/LoadingOverlay';
 import { LogBox } from 'react-native';
 
 LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
 
 // Um componente wrapper para acessar o contexto
 const AppContent = () => {
-  const { apiError, clearApiError } = useAuth();
+  const { apiError, clearApiError, loading } = useAuth();
   return (
     <>
       <AppNavigator />
@@ -18,6 +19,7 @@ const AppContent = () => {
         errorMessage={apiError}
         onClose={clearApiError}
       />
+      <LoadingOverlay visible={loading} />
     </>
   );
 }
