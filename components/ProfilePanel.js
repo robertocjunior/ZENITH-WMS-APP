@@ -1,6 +1,8 @@
 // components/ProfilePanel.js
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
+// 1. Importar o hook 'useSafeAreaInsets'
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -12,6 +14,8 @@ const { width } = Dimensions.get('window');
 const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
     const { userSession } = useAuth();
     const { colors } = useTheme();
+    // 2. Obter os valores da área segura
+    const insets = useSafeAreaInsets();
     const styles = getStyles(colors);
 
     const slideAnim = useRef(new Animated.Value(width)).current;
@@ -57,7 +61,17 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
                         { width: panelWidth, transform: [{ translateX: slideAnim }] }
                     ]}
                 >
-                    <Pressable style={styles.panelContentContainer}>
+                    {/* 3. Aplicar os valores de 'insets' como padding no container do conteúdo */}
+                    <Pressable
+                        style={[
+                            styles.panelContentContainer,
+                            {
+                                paddingTop: insets.top,
+                                paddingBottom: insets.bottom,
+                            }
+                        ]}
+                        onPress={(e) => e.stopPropagation()}
+                    >
                         <View>
                             <View style={styles.panelHeader}>
                                 <View style={styles.userInfo}>
@@ -102,6 +116,7 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.cardBackground,
         position: 'absolute',
         top: 0,
+        // *** ALTERAÇÃO REVERTIDA: Voltando para 'left: 0' como era no seu original ***
         left: 0,
     },
     panelContentContainer: {
@@ -112,27 +127,28 @@ const getStyles = (colors) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: SIZES.padding,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
+        paddingHorizontal: SIZES.padding,
+        paddingTop: SIZES.padding,
     },
     userInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
+        // Adicionado para evitar que o nome de usuário empurre o botão de fechar
+        flexShrink: 1,
     },
     userInfoText: {
         fontSize: 16,
         fontWeight: '600',
         color: colors.primary,
+        flexShrink: 1,
     },
     panelBody: {
         padding: SIZES.padding / 2,
     },
     panelFooter: {
-        padding: SIZES.padding,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
+        paddingHorizontal: SIZES.padding,
+        paddingBottom: SIZES.padding,
     },
     panelButton: {
         flexDirection: 'row',
