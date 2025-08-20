@@ -1,8 +1,8 @@
 // components/ProfilePanel.js
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Modal, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
-// 1. Importar o hook 'useSafeAreaInsets'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Application from 'expo-application';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -14,13 +14,13 @@ const { width } = Dimensions.get('window');
 const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
     const { userSession } = useAuth();
     const { colors } = useTheme();
-    // 2. Obter os valores da área segura
     const insets = useSafeAreaInsets();
-    const styles = getStyles(colors);
+    const styles = getStyles(colors, insets);
 
     const slideAnim = useRef(new Animated.Value(width)).current;
     const panelWidth = Math.min(width * 0.85, 320);
     const panelVisiblePosition = width - panelWidth;
+    const appVersion = Application.nativeApplicationVersion;
 
     useEffect(() => {
         if (visible) {
@@ -61,31 +61,27 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
                         { width: panelWidth, transform: [{ translateX: slideAnim }] }
                     ]}
                 >
-                    {/* 3. Aplicar os valores de 'insets' como padding no container do conteúdo */}
                     <Pressable
-                        style={[
-                            styles.panelContentContainer,
-                            {
-                                paddingTop: insets.top,
-                                paddingBottom: insets.bottom,
-                            }
-                        ]}
+                        style={styles.panelContentContainer}
                         onPress={(e) => e.stopPropagation()}
                     >
                         <View>
-                            <View style={styles.panelHeader}>
-                                <View style={styles.userInfo}>
-                                    <Ionicons name="person-circle" size={24} color={colors.primary} />
-                                    <Text style={styles.userInfoText}>
-                                        {userSession ? `${userSession.codusu} - ${userSession.username}` : ''}
-                                    </Text>
+                            {/* -- CABEÇALHO -- */}
+                            <View style={styles.header}>
+                                <View style={styles.profileInfo}>
+                                    <Ionicons name="person-circle" size={50} color={colors.primary} />
+                                    <View>
+                                        <Text style={styles.userName}>{userSession?.username || 'Usuário'}</Text>
+                                        <Text style={styles.userId}>Cód: {userSession?.codusu || 'N/A'}</Text>
+                                    </View>
                                 </View>
-                                <AnimatedButton onPress={handleClose}>
+                                <AnimatedButton style={styles.closeButton} onPress={handleClose}>
                                     <Ionicons name="close" size={28} color={colors.textLight} />
                                 </AnimatedButton>
                             </View>
 
-                            <View style={styles.panelBody}>
+                            {/* -- CORPO (MENU) -- */}
+                            <View style={styles.body}>
                                 <AnimatedButton style={styles.panelButton} onPress={onNavigateToHistory}>
                                     <Ionicons name="time-outline" size={22} color={colors.text} />
                                     <Text style={styles.panelButtonText}>Histórico de Operações</Text>
@@ -93,11 +89,13 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
                             </View>
                         </View>
 
-                        <View style={styles.panelFooter}>
-                            <AnimatedButton style={styles.panelButton} onPress={onLogout}>
+                        {/* -- RODAPÉ -- */}
+                        <View style={styles.footer}>
+                            <AnimatedButton style={[styles.panelButton, styles.logoutButton]} onPress={onLogout}>
                                 <Ionicons name="log-out-outline" size={22} color={colors.danger} />
                                 <Text style={[styles.panelButtonText, { color: colors.danger }]}>Sair</Text>
                             </AnimatedButton>
+                            <Text style={styles.versionText}>Versão {appVersion}</Text>
                         </View>
                     </Pressable>
                 </Animated.View>
@@ -106,7 +104,7 @@ const ProfilePanel = ({ visible, onClose, onNavigateToHistory, onLogout }) => {
     );
 };
 
-const getStyles = (colors) => StyleSheet.create({
+const getStyles = (colors, insets) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -116,39 +114,42 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.cardBackground,
         position: 'absolute',
         top: 0,
-        // *** ALTERAÇÃO REVERTIDA: Voltando para 'left: 0' como era no seu original ***
         left: 0,
     },
     panelContentContainer: {
         flex: 1,
         justifyContent: 'space-between',
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
     },
-    panelHeader: {
+    header: {
+        padding: SIZES.padding * 1.5,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: SIZES.padding,
-        paddingTop: SIZES.padding,
+        alignItems: 'flex-start',
     },
-    userInfo: {
+    profileInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-        // Adicionado para evitar que o nome de usuário empurre o botão de fechar
-        flexShrink: 1,
+        gap: 15,
     },
-    userInfoText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.primary,
-        flexShrink: 1,
+    userName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: colors.text,
     },
-    panelBody: {
-        padding: SIZES.padding / 2,
+    userId: {
+        fontSize: 14,
+        color: colors.textLight,
     },
-    panelFooter: {
+    closeButton: {
+        padding: 5,
+    },
+    body: {
         paddingHorizontal: SIZES.padding,
-        paddingBottom: SIZES.padding,
+        marginTop: SIZES.padding,
     },
     panelButton: {
         flexDirection: 'row',
@@ -156,10 +157,25 @@ const getStyles = (colors) => StyleSheet.create({
         padding: SIZES.padding,
         borderRadius: SIZES.radius,
         gap: 15,
+        backgroundColor: colors.background, // Fundo sutil para os botões
     },
     panelButtonText: {
         fontSize: 16,
         color: colors.text,
+        fontWeight: '500',
+    },
+    footer: {
+        padding: SIZES.padding,
+        alignItems: 'center',
+    },
+    logoutButton: {
+        backgroundColor: colors.danger_light, // Um fundo vermelho claro para o botão de sair
+        width: '100%',
+    },
+    versionText: {
+        marginTop: SIZES.padding * 1.5,
+        fontSize: 12,
+        color: colors.textLight,
     },
 });
 
