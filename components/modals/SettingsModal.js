@@ -15,8 +15,6 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
     const modalScale = useRef(new Animated.Value(0.9)).current;
     const keyboardHeightAnim = useRef(new Animated.Value(0)).current;
 
-    // CORREÇÃO: O componente ThemeOptionButton foi movido para dentro do SettingsModal
-    // para que ele possa acessar a variável 'styles'.
     const ThemeOptionButton = ({ label, onPress, isActive }) => {
         return (
             <AnimatedButton
@@ -119,14 +117,10 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
                                     keyboardType="url"
                                     autoFocus={true}
                                 />
-                                <View style={styles.buttonRow}>
-                                    <AnimatedButton style={[styles.button, styles.cancelButton]} onPress={handleClose}>
-                                        <Text style={styles.cancelButtonText}>Cancelar</Text>
-                                    </AnimatedButton>
-                                    <AnimatedButton style={[styles.button, styles.confirmButton]} onPress={handleSave}>
-                                        <Text style={styles.confirmButtonText}>Salvar</Text>
-                                    </AnimatedButton>
-                                </View>
+                                {/* ALTERAÇÃO: Removido o botão de cancelar e o container 'buttonRow' */}
+                                <AnimatedButton style={styles.confirmButton} onPress={handleSave}>
+                                    <Text style={styles.confirmButtonText}>Confirmar</Text>
+                                </AnimatedButton>
                             </Pressable>
                         </Animated.View>
                     </Animated.View>
@@ -171,14 +165,19 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.inputBackground,
         color: colors.text,
     },
-    buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
-    button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
-    cancelButton: {
-        backgroundColor: colors.buttonSecondaryBackground, 
+    // ALTERAÇÃO: Estilos de botões antigos removidos e 'confirmButton' foi atualizado
+    confirmButton: { 
+        backgroundColor: colors.primary,
+        padding: 15,
+        borderRadius: SIZES.radius,
+        alignItems: 'center',
+        width: '100%',
     },
-    cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500', },
-    confirmButton: { backgroundColor: colors.primary, },
-    confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500', },
+    confirmButtonText: { 
+        color: colors.white, 
+        fontSize: 16, 
+        fontWeight: '500', 
+    },
     themeSelectorContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
