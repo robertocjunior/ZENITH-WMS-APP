@@ -4,7 +4,7 @@ import { View, Text, Pressable, StyleSheet, FlatList, Keyboard, Modal } from "re
 import Animated, { useAnimatedStyle, withTiming, Easing } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 
-const CustomDropdown = ({ items = [], value, onChange, placeholder = "Selecione...", colors }) => {
+const CustomDropdown = ({ items = [], value, onChange, placeholder = "Selecione...", colors, disabled = false }) => {
   const [open, setOpen] = useState(false);
   const [layout, setLayout] = useState(null);
   const dropdownButtonRef = useRef(null);
@@ -28,13 +28,13 @@ const CustomDropdown = ({ items = [], value, onChange, placeholder = "Selecione.
   const selectedLabel = items.find((i) => i.value === value)?.label;
 
   const handleOpen = () => {
+    if (disabled) return;
     Keyboard.dismiss();
-    // CORREÇÃO: Usando 'measureInWindow' para obter as coordenadas corretas da tela.
     dropdownButtonRef.current?.measureInWindow((x, y, width, height) => {
       setLayout({
         width,
         pageX: x,
-        pageY: y + height, // A posição Y correta para o menu aparecer abaixo do botão
+        pageY: y + height,
       });
       setOpen(true);
     });
@@ -49,17 +49,25 @@ const CustomDropdown = ({ items = [], value, onChange, placeholder = "Selecione.
     <>
       <Pressable
         ref={dropdownButtonRef}
-        style={[styles.selector, { backgroundColor: colors.inputBackground }]}
+        style={[
+            styles.selector,
+            // A cor de fundo é sempre a mesma do input de busca, ativado ou não.
+            { backgroundColor: colors.inputBackground },
+        ]}
         onPress={handleOpen}
+        disabled={disabled}
       >
         <Text style={{ color: selectedLabel ? colors.text : colors.textLight, fontSize: 16 }} numberOfLines={1}>
           {selectedLabel || placeholder}
         </Text>
-        <Ionicons
-          name={"chevron-down-outline"}
-          size={20}
-          color={colors.textLight}
-        />
+
+        {!disabled && (
+          <Ionicons
+            name={"chevron-down-outline"}
+            size={20}
+            color={colors.textLight}
+          />
+        )}
       </Pressable>
 
       <Modal visible={open} transparent={true} animationType="none">
@@ -71,7 +79,7 @@ const CustomDropdown = ({ items = [], value, onChange, placeholder = "Selecione.
               styles.dropdown,
               {
                 backgroundColor: colors.cardBackground,
-                top: layout.pageY + 4, // Usando a posição Y corrigida
+                top: layout.pageY + 4,
                 left: layout.pageX,
                 width: layout.width,
               },

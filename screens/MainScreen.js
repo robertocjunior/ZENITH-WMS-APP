@@ -8,7 +8,6 @@ import { SIZES } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import * as SystemUI from 'expo-system-ui';
-
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import ResultCard from '../components/ResultCard';
 import ProfilePanel from '../components/ProfilePanel';
@@ -88,6 +87,13 @@ const MainScreen = ({ navigation }) => {
                 value: cod
             }));
             setWarehouseItems(formattedWarehouses);
+
+            // Se houver apenas um armazém, seleciona-o automaticamente.
+            if (formattedWarehouses.length === 1) {
+                setWarehouseValue(formattedWarehouses[0].value);
+            }
+        } else {
+            setWarehouseItems([]);
         }
     }, [warehouses]);
 
@@ -115,6 +121,8 @@ const MainScreen = ({ navigation }) => {
                             onChange={setWarehouseValue}
                             placeholder="Selecione um Armazém"
                             colors={colors}
+                            // Desativa o dropdown se houver apenas um item.
+                            disabled={warehouseItems.length === 1}
                         />
                     </View>
                     <AnimatedButton style={styles.profileButton} onPress={() => setPanelVisible(true)}>
