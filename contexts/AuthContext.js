@@ -5,7 +5,8 @@ import * as api from '../api';
 
 const AuthContext = createContext(null);
 
-const MINIMUM_LOADING_TIME = 3000; // 3 segundos (mesma duração da animação)
+const MINIMUM_LOADING_TIME = 3000;
+const LAST_WAREHOUSES_KEY = 'lastUsedWarehouses'; // Chave para o AsyncStorage
 
 export const AuthProvider = ({ children }) => {
     const [userSession, setUserSession] = useState(null);
@@ -14,6 +15,22 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [apiError, setApiError] = useState(null);
     const [authStatus, setAuthStatus] = useState('loggedOut');
+    const [lastWarehouse, setLastWarehouse] = useState(null); // Novo estado para o armazém
+
+    // Função para carregar o último armazém de um usuário específico
+    const loadLastWarehouseForUser = async (codusu) => {
+        try {
+            const storedData = await AsyncStorage.getItem(LAST_WAREHOUSES_KEY);
+            const warehousesMap = storedData ? JSON.parse(storedData) : {};
+            if (warehousesMap[codusu]) {
+                setLastWarehouse(warehousesMap[codusu]);
+            } else {
+                setLastWarehouse(null); // Reseta se não houver armazém salvo para este usuário
+            }
+        } catch (e) {
+            console.error("Falha ao carregar último armazém:", e);
+        }
+    };
 
     useEffect(() => {
         const checkLogin = async () => {
@@ -24,6 +41,7 @@ export const AuthProvider = ({ children }) => {
                     setUserSession(parsedData.userSession);
                     setPermissions(parsedData.permissions);
                     setWarehouses(parsedData.warehouses);
+                    await loadLastWarehouseForUser(parsedData.userSession.codusu); // Carrega o armazém da sessão salva
                     setAuthStatus('loggedIn');
                 } else {
                     setAuthStatus('loggedOut');
@@ -40,23 +58,19 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const fetchAppData = async () => {
-            if (authStatus === 'authenticating') {
+            if (authStatus === 'authenticating' && userSession) {
                 try {
-                    // Promessa para o carregamento dos dados
                     const dataPromise = (async () => {
                         const [perms, whs] = await Promise.all([api.fetchPermissions(), api.fetchWarehouses()]);
                         const sessionToSave = { userSession, permissions: perms, warehouses: whs };
                         await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
                         setPermissions(perms);
                         setWarehouses(whs);
+                        await loadLastWarehouseForUser(userSession.codusu); // Carrega o armazém após o login
                     })();
 
-                    // Promessa para garantir a duração mínima da animação
                     const minTimePromise = new Promise(resolve => setTimeout(resolve, MINIMUM_LOADING_TIME));
-
-                    // Espera ambas as promessas terminarem
                     await Promise.all([dataPromise, minTimePromise]);
-
                     setAuthStatus('loggedIn');
                 } catch (error) {
                     handleApiError(error);
@@ -65,15 +79,13 @@ export const AuthProvider = ({ children }) => {
             }
         };
         fetchAppData();
-    }, [authStatus]);
+    }, [authStatus, userSession]);
 
     const login = async (username, password) => {
         setApiError(null);
         try {
             const response = await api.login(username, password);
             setUserSession(response);
-
-            // Apenas muda o estado, o useEffect acima cuidará do resto
             setAuthStatus('authenticating');
         } catch (error) {
             handleApiError(error);
@@ -90,8 +102,21 @@ export const AuthProvider = ({ children }) => {
             setUserSession(null);
             setPermissions(null);
             setWarehouses([]);
+            setLastWarehouse(null); // Limpa o último armazém ao deslogar
             setAuthStatus('loggedOut');
             await AsyncStorage.removeItem('userSession');
+        }
+    };
+
+    // Função para salvar o último armazém usado
+    const saveLastWarehouse = async (codusu, warehouseCode) => {
+        try {
+            const storedData = await AsyncStorage.getItem(LAST_WAREHOUSES_KEY);
+            const warehousesMap = storedData ? JSON.parse(storedData) : {};
+            warehousesMap[codusu] = warehouseCode;
+            await AsyncStorage.setItem(LAST_WAREHOUSES_KEY, JSON.stringify(warehousesMap));
+        } catch (e) {
+            console.error("Falha ao salvar último armazém:", e);
         }
     };
 
@@ -114,6 +139,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         handleApiError,
+        lastWarehouse, // Expondo o armazém salvo
+        saveLastWarehouse, // Expondo a função de salvar
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

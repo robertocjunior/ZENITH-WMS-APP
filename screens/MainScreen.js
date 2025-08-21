@@ -16,7 +16,8 @@ import ErrorModal from '../components/common/ErrorModal';
 import CustomDropdown from '../components/common/CustomDropdown';
 
 const MainScreen = ({ navigation }) => {
-    const { logout, handleApiError, warehouses } = useAuth();
+    // Pega os novos dados e funções do contexto
+    const { userSession, logout, handleApiError, warehouses, lastWarehouse, saveLastWarehouse } = useAuth();
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const route = useRoute();
@@ -79,23 +80,31 @@ const MainScreen = ({ navigation }) => {
             }
         }, [route.params?.refresh, colors])
     );
-
+    
+    // Este useEffect agora define o valor inicial do dropdown
     useEffect(() => {
         if (warehouses && warehouses.length > 0) {
-            const formattedWarehouses = warehouses.map(([cod, desc]) => ({
-                label: desc,
-                value: cod
-            }));
+            const formattedWarehouses = warehouses.map(([cod, desc]) => ({ label: desc, value: cod }));
             setWarehouseItems(formattedWarehouses);
 
-            // Se houver apenas um armazém, seleciona-o automaticamente.
-            if (formattedWarehouses.length === 1) {
+            const lastUsedIsValid = formattedWarehouses.some(wh => wh.value === lastWarehouse);
+
+            if (lastWarehouse && lastUsedIsValid) {
+                setWarehouseValue(lastWarehouse);
+            } else if (formattedWarehouses.length === 1) {
                 setWarehouseValue(formattedWarehouses[0].value);
             }
         } else {
             setWarehouseItems([]);
         }
-    }, [warehouses]);
+    }, [warehouses, lastWarehouse]);
+
+    // Este useEffect salva a escolha do usuário sempre que ela mudar
+    useEffect(() => {
+        if (warehouseValue && userSession?.codusu) {
+            saveLastWarehouse(userSession.codusu, warehouseValue);
+        }
+    }, [warehouseValue]);
 
     return (
         <View style={styles.container}>
@@ -121,7 +130,6 @@ const MainScreen = ({ navigation }) => {
                             onChange={setWarehouseValue}
                             placeholder="Selecione um Armazém"
                             colors={colors}
-                            // Desativa o dropdown se houver apenas um item.
                             disabled={warehouseItems.length === 1}
                         />
                     </View>
