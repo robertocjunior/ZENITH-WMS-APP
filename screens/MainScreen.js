@@ -16,7 +16,6 @@ import ErrorModal from '../components/common/ErrorModal';
 import CustomDropdown from '../components/common/CustomDropdown';
 
 const MainScreen = ({ navigation }) => {
-    // Pega os novos dados e funções do contexto
     const { userSession, logout, handleApiError, warehouses, lastWarehouse, saveLastWarehouse } = useAuth();
     const { colors } = useTheme();
     const styles = getStyles(colors);
@@ -43,8 +42,9 @@ const MainScreen = ({ navigation }) => {
             const result = await api.searchItems(String(wh), ft);
             setItems(result);
         } catch (err) {
-            handleApiError(err);
-            setError(err.message || "Erro na busca.");
+            // Esta chamada agora acionará o auto-logout se a sessão expirar
+            handleApiError(err); 
+            // setError(err.message || "Erro na busca."); // Opcional: pode remover se handleApiError já mostra um modal
         } finally {
             setLoading(false);
         }
@@ -81,7 +81,6 @@ const MainScreen = ({ navigation }) => {
         }, [route.params?.refresh, colors])
     );
     
-    // Este useEffect agora define o valor inicial do dropdown
     useEffect(() => {
         if (warehouses && warehouses.length > 0) {
             const formattedWarehouses = warehouses.map(([cod, desc]) => ({ label: desc, value: cod }));
@@ -99,7 +98,6 @@ const MainScreen = ({ navigation }) => {
         }
     }, [warehouses, lastWarehouse]);
 
-    // Este useEffect salva a escolha do usuário sempre que ela mudar
     useEffect(() => {
         if (warehouseValue && userSession?.codusu) {
             saveLastWarehouse(userSession.codusu, warehouseValue);

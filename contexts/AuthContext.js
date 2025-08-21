@@ -7,7 +7,7 @@ const AuthContext = createContext(null);
 
 const MINIMUM_LOADING_TIME = 3000;
 const LAST_WAREHOUSES_KEY = 'lastUsedWarehouses';
-const LAST_USERNAME_KEY = 'lastUsername'; // Nova chave para o AsyncStorage
+const LAST_USERNAME_KEY = 'lastUsername';
 
 export const AuthProvider = ({ children }) => {
     const [userSession, setUserSession] = useState(null);
@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     const [apiError, setApiError] = useState(null);
     const [authStatus, setAuthStatus] = useState('loggedOut');
     const [lastWarehouse, setLastWarehouse] = useState(null);
-    const [lastUsername, setLastUsername] = useState(''); // Novo estado para o nome de usuário
+    const [lastUsername, setLastUsername] = useState('');
 
     const loadLastWarehouseForUser = async (codusu) => {
         try {
@@ -27,7 +27,6 @@ export const AuthProvider = ({ children }) => {
         } catch (e) { console.error("Falha ao carregar último armazém:", e); }
     };
     
-    // Nova função para carregar o último nome de usuário
     const loadLastUsername = async () => {
         try {
             const username = await AsyncStorage.getItem(LAST_USERNAME_KEY);
@@ -40,7 +39,6 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkLogin = async () => {
             try {
-                // Carrega o último usuário e a sessão em paralelo para agilizar
                 await Promise.all([loadLastUsername(), (async () => {
                     const sessionData = await AsyncStorage.getItem('userSession');
                     if (sessionData) {
@@ -82,7 +80,7 @@ export const AuthProvider = ({ children }) => {
                     setAuthStatus('loggedIn');
                 } catch (error) {
                     handleApiError(error);
-                    await logout();
+                    // O logout já é chamado dentro de handleApiError, se necessário
                 }
             }
         };
@@ -93,7 +91,6 @@ export const AuthProvider = ({ children }) => {
         setApiError(null);
         try {
             const response = await api.login(username, password);
-            // Salva o nome de usuário após o sucesso do login
             await AsyncStorage.setItem(LAST_USERNAME_KEY, username);
             setLastUsername(username);
             setUserSession(response);
@@ -116,7 +113,6 @@ export const AuthProvider = ({ children }) => {
             setLastWarehouse(null);
             setAuthStatus('loggedOut');
             await AsyncStorage.removeItem('userSession');
-            // O último nome de usuário NÃO é limpo no logout
         }
     };
 
@@ -132,9 +128,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     const handleApiError = (error) => {
-        if (error.response && error.response.status === 401) {
-            setApiError("Sua sessão expirou. Por favor, faça login novamente.");
+        // --- LÓGICA DE AUTO-LOGOUT ---
+        // Verifica se a resposta de erro contém a flag 'reauthRequired'
+        if (error.response?.data?.reauthRequired) {
+            // Define a mensagem de erro específica para o modal
+            setApiError(error.response.data.message || "Sua sessão expirou. Faça o login novamente.");
+            // Executa o logout para limpar a sessão e redirecionar para a tela de login
+            logout();
         } else {
+            // Para todos os outros erros, exibe a mensagem padrão
             setApiError(error.message || 'Ocorreu um erro inesperado.');
         }
     };
@@ -152,7 +154,7 @@ export const AuthProvider = ({ children }) => {
         handleApiError,
         lastWarehouse,
         saveLastWarehouse,
-        lastUsername, // Expondo o último nome de usuário
+        lastUsername,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
