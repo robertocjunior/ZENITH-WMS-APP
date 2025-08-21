@@ -75,7 +75,6 @@ const LoginScreen = () => {
         }
     };
     
-    // A função agora salva e fecha o modal, sem exibir confirmação.
     const handleSaveSettings = async (newUrl) => {
         await setApiUrl(newUrl);
         setCurrentApiUrl(newUrl);
@@ -107,7 +106,16 @@ const LoginScreen = () => {
                         <Text style={styles.subtitle}>Faça login com seu usuário e senha do Sankhya.</Text>
 
                         <Text style={styles.label}>Usuário</Text>
-                        <TextInput style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" autoCompleteType="username" placeholderTextColor={colors.textLight}/>
+                        <TextInput 
+                            style={styles.input} 
+                            value={username} 
+                            // --- ALTERAÇÃO AQUI ---
+                            // Remove espaços em branco (/\s/g) do texto inserido
+                            onChangeText={(text) => setUsername(text.replace(/\s/g, ''))} 
+                            autoCapitalize="none" 
+                            autoCompleteType="username" 
+                            placeholderTextColor={colors.textLight}
+                        />
 
                         <Text style={styles.label}>Senha</Text>
                         <View style={styles.passwordContainer}>
