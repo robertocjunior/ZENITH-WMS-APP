@@ -15,11 +15,14 @@ const LoginScreen = () => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
 
-    const [username, setUsername] = useState('');
+    // Pega o 'lastUsername' do contexto
+    const { login, lastUsername } = useAuth();
+    
+    // Inicia o estado 'username' com o valor salvo
+    const [username, setUsername] = useState(lastUsername || '');
     const [password, setPassword] = useState('');
     const [isButtonLoading, setIsButtonLoading] = useState(false);
     const [isPasswordVisible, setPasswordVisible] = useState(false);
-    const { login } = useAuth();
     
     const [isSettingsVisible, setSettingsVisible] = useState(false);
     const [currentApiUrl, setCurrentApiUrl] = useState('');
@@ -109,8 +112,6 @@ const LoginScreen = () => {
                         <TextInput 
                             style={styles.input} 
                             value={username} 
-                            // --- ALTERAÇÃO AQUI ---
-                            // Remove espaços em branco (/\s/g) do texto inserido
                             onChangeText={(text) => setUsername(text.replace(/\s/g, ''))} 
                             autoCapitalize="none" 
                             autoCompleteType="username" 

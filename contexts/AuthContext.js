@@ -6,7 +6,8 @@ import * as api from '../api';
 const AuthContext = createContext(null);
 
 const MINIMUM_LOADING_TIME = 3000;
-const LAST_WAREHOUSES_KEY = 'lastUsedWarehouses'; // Chave para o AsyncStorage
+const LAST_WAREHOUSES_KEY = 'lastUsedWarehouses';
+const LAST_USERNAME_KEY = 'lastUsername'; // Nova chave para o AsyncStorage
 
 export const AuthProvider = ({ children }) => {
     const [userSession, setUserSession] = useState(null);
@@ -15,37 +16,44 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [apiError, setApiError] = useState(null);
     const [authStatus, setAuthStatus] = useState('loggedOut');
-    const [lastWarehouse, setLastWarehouse] = useState(null); // Novo estado para o armazém
+    const [lastWarehouse, setLastWarehouse] = useState(null);
+    const [lastUsername, setLastUsername] = useState(''); // Novo estado para o nome de usuário
 
-    // Função para carregar o último armazém de um usuário específico
     const loadLastWarehouseForUser = async (codusu) => {
         try {
             const storedData = await AsyncStorage.getItem(LAST_WAREHOUSES_KEY);
             const warehousesMap = storedData ? JSON.parse(storedData) : {};
-            if (warehousesMap[codusu]) {
-                setLastWarehouse(warehousesMap[codusu]);
-            } else {
-                setLastWarehouse(null); // Reseta se não houver armazém salvo para este usuário
+            setLastWarehouse(warehousesMap[codusu] || null);
+        } catch (e) { console.error("Falha ao carregar último armazém:", e); }
+    };
+    
+    // Nova função para carregar o último nome de usuário
+    const loadLastUsername = async () => {
+        try {
+            const username = await AsyncStorage.getItem(LAST_USERNAME_KEY);
+            if (username) {
+                setLastUsername(username);
             }
-        } catch (e) {
-            console.error("Falha ao carregar último armazém:", e);
-        }
+        } catch (e) { console.error("Falha ao carregar último usuário:", e); }
     };
 
     useEffect(() => {
         const checkLogin = async () => {
             try {
-                const sessionData = await AsyncStorage.getItem('userSession');
-                if (sessionData) {
-                    const parsedData = JSON.parse(sessionData);
-                    setUserSession(parsedData.userSession);
-                    setPermissions(parsedData.permissions);
-                    setWarehouses(parsedData.warehouses);
-                    await loadLastWarehouseForUser(parsedData.userSession.codusu); // Carrega o armazém da sessão salva
-                    setAuthStatus('loggedIn');
-                } else {
-                    setAuthStatus('loggedOut');
-                }
+                // Carrega o último usuário e a sessão em paralelo para agilizar
+                await Promise.all([loadLastUsername(), (async () => {
+                    const sessionData = await AsyncStorage.getItem('userSession');
+                    if (sessionData) {
+                        const parsedData = JSON.parse(sessionData);
+                        setUserSession(parsedData.userSession);
+                        setPermissions(parsedData.permissions);
+                        setWarehouses(parsedData.warehouses);
+                        await loadLastWarehouseForUser(parsedData.userSession.codusu);
+                        setAuthStatus('loggedIn');
+                    } else {
+                        setAuthStatus('loggedOut');
+                    }
+                })()]);
             } catch (e) {
                 console.error("Falha ao restaurar sessão:", e);
                 setAuthStatus('loggedOut');
@@ -66,7 +74,7 @@ export const AuthProvider = ({ children }) => {
                         await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
                         setPermissions(perms);
                         setWarehouses(whs);
-                        await loadLastWarehouseForUser(userSession.codusu); // Carrega o armazém após o login
+                        await loadLastWarehouseForUser(userSession.codusu);
                     })();
 
                     const minTimePromise = new Promise(resolve => setTimeout(resolve, MINIMUM_LOADING_TIME));
@@ -85,6 +93,9 @@ export const AuthProvider = ({ children }) => {
         setApiError(null);
         try {
             const response = await api.login(username, password);
+            // Salva o nome de usuário após o sucesso do login
+            await AsyncStorage.setItem(LAST_USERNAME_KEY, username);
+            setLastUsername(username);
             setUserSession(response);
             setAuthStatus('authenticating');
         } catch (error) {
@@ -102,13 +113,13 @@ export const AuthProvider = ({ children }) => {
             setUserSession(null);
             setPermissions(null);
             setWarehouses([]);
-            setLastWarehouse(null); // Limpa o último armazém ao deslogar
+            setLastWarehouse(null);
             setAuthStatus('loggedOut');
             await AsyncStorage.removeItem('userSession');
+            // O último nome de usuário NÃO é limpo no logout
         }
     };
 
-    // Função para salvar o último armazém usado
     const saveLastWarehouse = async (codusu, warehouseCode) => {
         try {
             const storedData = await AsyncStorage.getItem(LAST_WAREHOUSES_KEY);
@@ -139,8 +150,9 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         handleApiError,
-        lastWarehouse, // Expondo o armazém salvo
-        saveLastWarehouse, // Expondo a função de salvar
+        lastWarehouse,
+        saveLastWarehouse,
+        lastUsername, // Expondo o último nome de usuário
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
