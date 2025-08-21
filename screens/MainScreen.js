@@ -1,6 +1,6 @@
 // screens/MainScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Keyboard } from 'react-native'; // Alert foi removido
+import { View, Text, StyleSheet, FlatList, TextInput, Keyboard } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import * as api from '../api';
@@ -8,28 +8,25 @@ import { SIZES } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import * as SystemUI from 'expo-system-ui';
-import DropDownPicker from 'react-native-dropdown-picker';
+
 import LoadingOverlay from '../components/common/LoadingOverlay';
 import ResultCard from '../components/ResultCard';
 import ProfilePanel from '../components/ProfilePanel';
 import AnimatedButton from '../components/common/AnimatedButton';
-// 1. Importar o ErrorModal
 import ErrorModal from '../components/common/ErrorModal';
+import CustomDropdown from '../components/common/CustomDropdown';
 
 const MainScreen = ({ navigation }) => {
     const { logout, handleApiError, warehouses } = useAuth();
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const route = useRoute();
-    const [open, setOpen] = useState(false);
     const [warehouseValue, setWarehouseValue] = useState(null);
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [filter, setFilter] = useState('');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isPanelVisible, setPanelVisible] = useState(false);
-
-    // 2. Adicionar estado para controlar o modal de erro
     const [error, setError] = useState(null);
 
     const handleSearch = async (searchWarehouse, searchFilter) => {
@@ -38,7 +35,6 @@ const MainScreen = ({ navigation }) => {
         Keyboard.dismiss();
         if (!wh) {
             if (route.params?.refresh) return;
-            // 3. Usar o ErrorModal em vez do Alert
             setError("Selecione um armazém para buscar.");
             return;
         }
@@ -48,7 +44,6 @@ const MainScreen = ({ navigation }) => {
             setItems(result);
         } catch (err) {
             handleApiError(err);
-            // Pode-se usar o mesmo modal de erro para erros de busca, se desejar.
             setError(err.message || "Erro na busca.");
         } finally {
             setLoading(false);
@@ -105,7 +100,6 @@ const MainScreen = ({ navigation }) => {
                 onNavigateToHistory={handleNavigateToHistory}
                 onLogout={handleLogout}
             />
-            {/* 4. Renderizar o ErrorModal */}
             <ErrorModal
                 visible={!!error}
                 errorMessage={error}
@@ -115,22 +109,12 @@ const MainScreen = ({ navigation }) => {
             <View style={styles.header}>
                 <View style={styles.topHeaderRow}>
                     <View style={styles.pickerWrapper}>
-                        <DropDownPicker
-                            open={open}
-                            value={warehouseValue}
+                        <CustomDropdown
                             items={warehouseItems}
-                            setOpen={setOpen}
-                            setValue={setWarehouseValue}
-                            setItems={setWarehouseItems}
+                            value={warehouseValue}
+                            onChange={setWarehouseValue}
                             placeholder="Selecione um Armazém"
-                            style={styles.dropdownPicker}
-                            containerStyle={styles.dropdownContainer}
-                            dropDownContainerStyle={[styles.dropdownList, { backgroundColor: colors.cardBackground }]}
-                            textStyle={{ color: colors.text }}
-                            listItemLabelStyle={{ color: colors.text }}
-                            zIndex={3000}
-                            zIndexInverse={1000}
-                            theme={colors.background === '#121212' ? "DARK" : "LIGHT"}
+                            colors={colors}
                         />
                     </View>
                     <AnimatedButton style={styles.profileButton} onPress={() => setPanelVisible(true)}>
@@ -189,19 +173,6 @@ const getStyles = (colors) => StyleSheet.create({
     pickerWrapper: {
         flex: 1,
         marginRight: 10,
-        backgroundColor: colors.inputBackground,
-        borderRadius: SIZES.radius,
-    },
-    dropdownContainer: {
-        height: 48,
-    },
-    dropdownPicker: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.inputBackground,
-    },
-    dropdownList: {
-        borderColor: colors.border,
     },
     profileButton: {
         padding: 5,
