@@ -24,6 +24,15 @@
       },
       "package": "com.robertocjunior.zenithwms",
       "userInterfaceStyle": "automatic"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "535bd6aa-0822-4ed4-96fd-1f6fa570d5dd"
+      }
+    },
+    "owner": "robertocjunior",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
