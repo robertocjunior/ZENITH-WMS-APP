@@ -1,6 +1,6 @@
 // components/modals/SettingsModal.js
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Alert, Animated, Pressable } from 'react-native';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Alert, Animated, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SIZES } from '../../constants/theme';
 import AnimatedButton from '../common/AnimatedButton';
@@ -10,24 +10,17 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
     const styles = getStyles(colors);
 
     const [apiUrl, setApiUrl] = useState('');
-    const [isModalVisible, setIsModalVisible] = useState(visible);
+    const [shouldRender, setShouldRender] = useState(visible);
     const modalOpacity = useRef(new Animated.Value(0)).current;
     const modalScale = useRef(new Animated.Value(0.9)).current;
-    const keyboardHeightAnim = useRef(new Animated.Value(0)).current;
-
+    
     const ThemeOptionButton = ({ label, onPress, isActive }) => {
         return (
             <AnimatedButton
                 onPress={onPress}
-                style={[
-                    styles.themeButton,
-                    { backgroundColor: isActive ? colors.primary : colors.buttonSecondaryBackground }
-                ]}
+                style={[ styles.themeButton, { backgroundColor: isActive ? colors.primary : colors.buttonSecondaryBackground } ]}
             >
-                <Text style={[
-                    styles.themeButtonText,
-                    { color: isActive ? colors.white : colors.text }
-                ]}>
+                <Text style={[ styles.themeButtonText, { color: isActive ? colors.white : colors.text } ]}>
                     {label}
                 </Text>
             </AnimatedButton>
@@ -35,26 +28,8 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
     };
 
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow', (e) => {
-                Animated.timing(keyboardHeightAnim, { toValue: e.endCoordinates.height, duration: 250, useNativeDriver: false }).start();
-            }
-        );
-        const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide', () => {
-                Animated.timing(keyboardHeightAnim, { toValue: 0, duration: 200, useNativeDriver: false }).start();
-            }
-        );
-        return () => {
-            keyboardDidHideListener.remove();
-            keyboardDidShowListener.remove();
-        };
-    }, []);
-
-    useEffect(() => {
         if (visible) {
-            setIsModalVisible(true);
-            setApiUrl(currentApiUrl);
+            setShouldRender(true);
             Animated.parallel([
                 Animated.timing(modalOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
                 Animated.spring(modalScale, { toValue: 1, friction: 6, useNativeDriver: true })
@@ -64,10 +39,16 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
                  Animated.timing(modalOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
                  Animated.timing(modalScale, { toValue: 0.9, duration: 200, useNativeDriver: true })
             ]).start(() => {
-                setIsModalVisible(false);
+                setShouldRender(false);
             });
         }
-    }, [visible, currentApiUrl]);
+    }, [visible]);
+
+    useEffect(() => {
+        if (visible) {
+            setApiUrl(currentApiUrl);
+        }
+    }, [currentApiUrl, visible]);
 
     const handleSave = () => {
         if (!apiUrl || !apiUrl.startsWith('http')) {
@@ -84,19 +65,28 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
         onClose();
     };
 
+    if (!shouldRender) {
+        return null;
+    }
+
     return (
         <Modal
             animationType="none"
             transparent={true}
-            visible={isModalVisible}
+            visible={shouldRender}
             onRequestClose={handleClose}
             statusBarTranslucent={true}
         >
             <Animated.View style={[styles.overlay, { opacity: modalOpacity }]}>
                 <Pressable style={styles.pressableOverlay} onPress={handleClose}>
-                    <Animated.View style={[styles.centeringContainer, { paddingBottom: keyboardHeightAnim }]}>
-                        <Animated.View style={[styles.modalContent, { transform: [{ scale: modalScale }] }]}>
-                            <Pressable onPress={(e) => e.stopPropagation()}>
+                    <KeyboardAvoidingView 
+                        style={styles.centeringContainer} 
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    >
+                        {/* O Pressable aqui serve para o stopPropagation */}
+                        <Pressable onPress={(e) => e.stopPropagation()}>
+                             {/* E o Animated.View é o card do modal */}
+                            <Animated.View style={[styles.modalContent, { opacity: modalOpacity, transform: [{ scale: modalScale }] }]}>
                                 <Text style={styles.title}>Configurações</Text>
                                 
                                 <Text style={styles.label}>Tema</Text>
@@ -117,32 +107,34 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
                                     keyboardType="url"
                                     autoFocus={true}
                                 />
-                                {/* ALTERAÇÃO: Removido o botão de cancelar e o container 'buttonRow' */}
                                 <AnimatedButton style={styles.confirmButton} onPress={handleSave}>
                                     <Text style={styles.confirmButtonText}>Confirmar</Text>
                                 </AnimatedButton>
-                            </Pressable>
-                        </Animated.View>
-                    </Animated.View>
+                            </Animated.View>
+                        </Pressable>
+                    </KeyboardAvoidingView>
                 </Pressable>
             </Animated.View>
         </Modal>
     );
 };
 
+
 const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     pressableOverlay: {
         flex: 1,
         width: '100%',
-    },
-    centeringContainer: {
-        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    centeringContainer: {
+        width: '100%',
         padding: 20,
     },
     modalContent: {
@@ -165,7 +157,6 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.inputBackground,
         color: colors.text,
     },
-    // ALTERAÇÃO: Estilos de botões antigos removidos e 'confirmButton' foi atualizado
     confirmButton: { 
         backgroundColor: colors.primary,
         padding: 15,
