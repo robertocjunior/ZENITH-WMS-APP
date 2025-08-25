@@ -24,7 +24,9 @@
         "backgroundImage": "./assets/adaptive-icon-background.png"
       },
       "package": "com.robertocjunior.zenithwms",
-      "userInterfaceStyle": "automatic"
+      "userInterfaceStyle": "automatic",
+      "versionCode": 3,
+      "usesCleartextTraffic": true
     },
     "extra": {
       "eas": {
