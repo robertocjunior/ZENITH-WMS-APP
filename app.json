@@ -2,7 +2,7 @@
   "expo": {
     "name": "ZENITH",
     "slug": "ZENITH-WMS-APP",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -20,6 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "versionCode": 2,
         "backgroundImage": "./assets/adaptive-icon-background.png"
       },
       "package": "com.robertocjunior.zenithwms",
