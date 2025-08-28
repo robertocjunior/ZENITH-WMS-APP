@@ -15,7 +15,10 @@ const AppContent = () => {
 
   return (
     <>
-      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
+      <StatusBar 
+        style={theme === 'dark' ? 'light' : 'dark'} 
+        backgroundColor={colors.primary} 
+      />
       <AppNavigator />
       <ErrorModal
         visible={!!apiError}
