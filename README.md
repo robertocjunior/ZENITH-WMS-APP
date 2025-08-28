@@ -164,3 +164,19 @@ O projeto está organizado da seguinte maneira:
 *   `/screens`: As telas principais do aplicativo (Login, Main, Details, etc.).
 *   `/utils`: Funções utilitárias, como formatadores de dados.
 *   `App.js`: O ponto de entrada principal do aplicativo.
+
+
+
+para compilar o app rode
+
+```
+npx expo prebuild --platform android
+```
+
+```
+cd android
+```
+
+```
+.\gradlew assembleRelease
+```
