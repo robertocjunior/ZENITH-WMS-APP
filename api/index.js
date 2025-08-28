@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 
 // --- 1. LÓGICA DE URL DINÂMICA ---
 const API_URL_KEY = 'zenith_api_base_url';
-const DEFAULT_API_URL = 'http://192.168.2.57:3030'; // Um valor padrão caso nenhum seja salvo
+const DEFAULT_API_URL = 'http://zenith.nicocereais.com.br:3030'; // Um valor padrão caso nenhum seja salvo
 
 let API_BASE_URL = '';
 
