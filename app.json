@@ -2,7 +2,7 @@
   "expo": {
     "name": "ZENITH",
     "slug": "ZENITH-WMS-APP",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -18,10 +18,11 @@
       "android"
     ],
     "android": {
+      
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon-foreground.png",
-        "versionCode": 2,
-        "backgroundImage": "./assets/adaptive-icon-background.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       },
       "package": "com.robertocjunior.zenithwms",
       "userInterfaceStyle": "automatic",

@@ -18,35 +18,36 @@ Um aplicativo móvel de Warehouse Management System (WMS) desenvolvido com React
 *(Adicione aqui uma captura da tela de detalhes)*
 
 ### ✨ Funcionalidades
-*   **Autenticação Segura:** Sistema de login e logout com persistência de sessão e do último usuário logado.
-*   **Interface Temática:** Suporte completo a temas Claro (Light), Escuro (Dark) e Automático (sincronizado com o sistema operacional).
-*   **Gerenciamento de Armazéns:**
-    *   Seleção de armazém com persistência da última escolha por usuário.
-    *   Bloqueio inteligente do seletor quando o usuário possui acesso a apenas um armazém.
-*   **Consulta de Estoque:** Busca dinâmica e filtragem de itens dentro do armazém selecionado.
-*   **Operações de WMS:**
-    *   Visualização de detalhes completos do item.
-    *   Histórico de operações do dia.
-    *   Módulos para Baixa, Transferência, Picking e Correção de inventário.
-*   **Experiência de Usuário Polida:**
-    *   Animação de carregamento temática e personalizada com a identidade visual do app.
-    *   Transições de tela suaves e feedback tátil em todos os botões.
-    *   Componentes de UI customizados, como menus dropdown, para uma interface coesa.
-*   **Configurações Flexíveis:**
-    *   Modal de configurações para alterar o tema do aplicativo.
-    *   Configuração de endereço da API.
+* **Autenticação Segura:** Sistema de login e logout com persistência de sessão e do último usuário logado.
+* **Interface Temática:** Suporte completo a temas Claro (Light), Escuro (Dark) e Automático (sincronizado com o sistema operacional).
+* **Gerenciamento de Armazéns:**
+    * Seleção de armazém com persistência da última escolha por usuário.
+    * Bloqueio inteligente do seletor quando o usuário possui acesso a apenas um armazém.
+* **Consulta de Estoque:** Busca dinâmica e filtragem de itens dentro do armazém selecionado.
+* **Operações de WMS:**
+    * Visualização de detalhes completos do item.
+    * Histórico de operações do dia.
+    * Módulos para Baixa, Transferência, Picking e Correção de inventário.
+* **Experiência de Usuário Polida:**
+    * Animação de carregamento temática e personalizada com a identidade visual do app.
+    * Transições de tela suaves e feedback tátil em todos os botões.
+    * Componentes de UI customizados, como menus dropdown, para uma interface coesa.
+* **Configurações Flexíveis:**
+    * Modal de configurações para alterar o tema do aplicativo.
+    * Configuração de endereço da API.
 
 ### 🚀 Tecnologias Utilizadas
-*   **React Native**
-*   **Expo**
-*   **React Navigation** para o gerenciamento de rotas e navegação.
-*   **React Native Reanimated** para animações fluidas.
-*   **AsyncStorage** para persistência de dados no dispositivo.
+* **React Native**
+* **Expo**
+* **React Navigation** para o gerenciamento de rotas e navegação.
+* **React Native Reanimated** para animações fluidas.
+* **AsyncStorage** para persistência de dados no dispositivo.
 
 ### ⚙️ Como Executar o Projeto (Modo de Desenvolvimento)
 Clone o repositório:
 ```bash
 git clone <url-do-seu-repositorio>
+Instale as dependências:
 ```
 
 Instale as dependências:
@@ -58,44 +59,39 @@ Inicie o servidor de desenvolvimento:
 ```bash
 npx expo start
 ```
+Para limpar o cache, caso encontre algum problema, use npx expo start -c.
 
-Para limpar o cache, caso encontre algum problema, use `npx expo start -c`.
-
-### 📦 Como Gerar o APK Localmente (Build de Produção)
+📦 Como Gerar o APK Localmente (Build de Produção)
 Estas instruções são para criar um APK assinado e pronto para distribuição, compilado na sua própria máquina.
 
-#### Pré-requisitos:
+Pré-requisitos:
+Ambiente Android Configurado: É necessário ter o Android Studio, JDK e as variáveis de ambiente do Android configuradas. Siga o guia oficial do React Native em "Environment Setup", na aba "React Native CLI Quickstart".
 
-*   **Ambiente Android Configurado:** É necessário ter o Android Studio, JDK e as variáveis de ambiente do Android configuradas. Siga o guia oficial do React Native em "Environment Setup", na aba "React Native CLI Quickstart".
-*   **Projeto em um Caminho Curto:** Para evitar erros de compilação no Windows, certifique-se de que a pasta do projeto esteja em um caminho curto, como `C:\dev\ZENITH-WMS-APP\`.
+Projeto em um Caminho Curto: Para evitar erros de compilação no Windows, certifique-se de que a pasta do projeto esteja em um caminho curto, como C:\dev\ZENITH-WMS-APP\.
 
-#### Passo 1: Preparar o Ambiente Nativo (Prebuild)
-Este comando cria a pasta `/android` com todo o código nativo do projeto.
+Passo 1: Preparar o Ambiente Nativo (Prebuild)
+Este comando cria a pasta /android com todo o código nativo do projeto. O argumento --clean apaga a pasta /android se ela já existir, garantindo uma configuração limpa e evitando erros de cache.
 
-**Importante:** Se a pasta `/android` já existe de uma build anterior, apague-a completamente para garantir uma configuração limpa e evitar erros de cache de caminhos.
-
-# Apague a pasta /android se ela existir
 ```bash
-npx expo prebuild --platform android
+npx expo prebuild --clean --platform android
 ```
-
-#### Passo 2: Criar a Chave de Assinatura (keystore)
+Passo 2: Criar a Chave de Assinatura (keystore)
 Esta chave é um arquivo único que certifica a autoria do seu app. Guarde este arquivo e as senhas em um local extremamente seguro!
 
-Navegue até a pasta `android/app`:
+Navegue até a pasta android/app:
 ```bash
 cd android/app
 ```
-
 Execute o comando keytool para gerar a chave. Ele fará algumas perguntas e pedirá para você criar duas senhas.
+
 ```bash
 keytool -genkey -v -keystore zenith-wms-app.keystore -alias zenith-wms-alias -keyalg RSA -keysize 2048 -validity 10000
 ```
+Um arquivo .keystore será criado dentro da pasta android/app.
 
-Um arquivo `.keystore` será criado dentro da pasta `android/app`.
+Passo 3: Configurar o Gradle para Assinatura
+Edite o arquivo android/gradle.properties e adicione as seguintes linhas, substituindo SUA_SENHA pela senha que você acabou de criar:
 
-#### Passo 3: Configurar o Gradle para Assinatura
-Edite o arquivo `android/gradle.properties` e adicione as seguintes linhas, substituindo `SUA_SENHA` pela senha que você acabou de criar:
 ```properties
 ZENITH_RELEASE_STORE_FILE=zenith-wms-app.keystore
 ZENITH_RELEASE_KEY_ALIAS=zenith-wms-alias
@@ -105,8 +101,8 @@ ZENITH_RELEASE_KEY_PASSWORD=SUA_SENHA
 # Adicione esta linha para evitar erros de falta de memória durante a build
 org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g
 ```
+Edite o arquivo android/app/build.gradle e adicione as configurações de assinatura (signingConfigs) dentro do bloco android { ... }:
 
-Edite o arquivo `android/app/build.gradle` e adicione as configurações de assinatura (`signingConfigs`) dentro do bloco `android { ... }`:
 ```groovy
 ...
 android {
@@ -133,50 +129,49 @@ android {
 }
 ...
 ```
-
-#### Passo 4: Gerar o APK
-Navegue de volta para a pasta `android`:
+Passo 4: Gerar o APK
+Navegue para a pasta android (se você estava em android/app, suba um nível com cd ..):
 ```bash
-cd ..
+cd C:\caminho\do\seu\projeto\android
 ```
-
 Execute o comando de compilação.
 
 No Windows (PowerShell):
 ```powershell
 .\gradlew clean assembleRelease
 ```
-
 No macOS/Linux:
 ```bash
 ./gradlew clean assembleRelease
 ```
+Após a conclusão, seu APK final estará localizado em android/app/build/outputs/apk/release/app-release.apk.
 
-Após a conclusão, seu APK final estará localizado em `android/app/build/outputs/apk/release/app-release.apk`.
+🚀 Compilação Rápida (Após a Primeira Configuração)
+Uma vez que a chave de assinatura (.keystore) e o gradle.properties já foram configurados, o processo para gerar novas versões do APK é mais simples:
 
-### 📂 Estrutura de Arquivos
-O projeto está organizado da seguinte maneira:
+```bash
+# 1. Garante que a pasta android está limpa e sincronizada com o projeto
+npx expo prebuild --clean --platform android
 
-*   `/assets`: Contém todos os recursos estáticos, como ícones, imagens e fontes.
-*   `/components`: Componentes reutilizáveis da UI (botões, modais, cards, etc.).
-*   `/contexts`: Gerenciamento de estado global com a Context API (Autenticação, Tema).
-*   `/navigation`: Configuração das rotas e do fluxo de navegação do aplicativo.
-*   `/screens`: As telas principais do aplicativo (Login, Main, Details, etc.).
-*   `/utils`: Funções utilitárias, como formatadores de dados.
-*   `App.js`: O ponto de entrada principal do aplicativo.
-
-
-
-para compilar o app rode
-
-```
-npx expo prebuild --platform android
-```
-
-```
+# 2. Navega para a pasta android
 cd android
-```
 
-```
+# 3. Executa a compilação (Windows/PowerShell)
 .\gradlew assembleRelease
 ```
+📂 Estrutura de Arquivos
+O projeto está organizado da seguinte maneira:
+
+/assets: Contém todos os recursos estáticos, como ícones, imagens e fontes.
+
+/components: Componentes reutilizáveis da UI (botões, modais, cards, etc.).
+
+/contexts: Gerenciamento de estado global com a Context API (Autenticação, Tema).
+
+/navigation: Configuração das rotas e do fluxo de navegação do aplicativo.
+
+/screens: As telas principais do aplicativo (Login, Main, Details, etc.).
+
+/utils: Funções utilitárias, como formatadores de dados.
+
+App.js: O ponto de entrada principal do aplicativo.
