@@ -175,3 +175,16 @@ O projeto está organizado da seguinte maneira:
 /utils: Funções utilitárias, como formatadores de dados.
 
 App.js: O ponto de entrada principal do aplicativo.
+
+
+```
+npx expo prebuild --platform android
+```
+
+```
+cd android
+```
+
+```
+.\gradlew assembleRelease
+```
