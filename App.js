@@ -4,26 +4,25 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import AppNavigator from './navigation/AppNavigator';
 import ErrorModal from './components/common/ErrorModal';
-import { LogBox, View } from 'react-native'; // Importe a View
+import { LogBox, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
+import TestBanner from './components/common/TestBanner';
+// 1. Importe o SafeAreaProvider
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
 
 const AppContent = () => {
-  const { apiError, clearApiError } = useAuth();
+  const { userSession, apiError, clearApiError } = useAuth();
   const { theme, colors } = useTheme();
 
-  // =================================================================
-  // CORREÇÃO: Garante que as cores foram carregadas antes de usar
-  // =================================================================
   if (!colors) {
-    // Renderiza um fundo vazio enquanto o tema carrega para evitar o crash
     return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar 
         style={theme === 'dark' ? 'light' : 'dark'} 
         backgroundColor={colors.primary} 
@@ -34,7 +33,8 @@ const AppContent = () => {
         errorMessage={apiError}
         onClose={clearApiError}
       />
-    </>
+      {userSession?.isTestEnvironment && <TestBanner />}
+    </View>
   );
 }
 
@@ -48,10 +48,13 @@ export default function App() {
   }
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
-    </AuthProvider>
+    // 2. Envolva tudo com o SafeAreaProvider
+    <SafeAreaProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
