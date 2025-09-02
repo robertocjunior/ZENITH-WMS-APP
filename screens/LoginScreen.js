@@ -1,6 +1,9 @@
 // screens/LoginScreen.js
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, ActivityIndicator, TouchableWithoutFeedback, Keyboard, Platform, KeyboardAvoidingView } from 'react-native';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import {
+    View, Text, TextInput, StyleSheet, Image, ActivityIndicator,
+    TouchableWithoutFeedback, Keyboard, Animated
+} from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { SIZES } from '../constants/theme';
@@ -14,42 +17,44 @@ import AnimatedButton from '../components/common/AnimatedButton';
 const LoginScreen = () => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
-
     const { login, lastUsername } = useAuth();
     
     const [username, setUsername] = useState(lastUsername || '');
     const [password, setPassword] = useState('');
     const [isButtonLoading, setIsButtonLoading] = useState(false);
     const [isPasswordVisible, setPasswordVisible] = useState(false);
-    
     const [isSettingsVisible, setSettingsVisible] = useState(false);
     const [currentApiUrl, setCurrentApiUrl] = useState('');
-
-    // 1. Estado para controlar a visibilidade do teclado
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
-    // 2. useEffect para escutar o teclado
-    useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            () => {
-                setKeyboardVisible(true); // Teclado abriu
-            }
-        );
-        const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide',
-            () => {
-                setKeyboardVisible(false); // Teclado fechou
-            }
-        );
+    const keyboardOffset = useRef(new Animated.Value(0)).current;
 
-        // Limpeza dos listeners quando o componente é desmontado
+    const handleKeyboardShow = () => {
+        Animated.timing(keyboardOffset, {
+            toValue: -125,
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+        setKeyboardVisible(true);
+    };
+
+    const handleKeyboardHide = () => {
+        Animated.timing(keyboardOffset, {
+            toValue: 0, 
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+        setKeyboardVisible(false);
+    };
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', handleKeyboardShow);
+        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', handleKeyboardHide);
         return () => {
             keyboardDidHideListener.remove();
             keyboardDidShowListener.remove();
         };
     }, []);
-
 
     useEffect(() => {
         const loadUrl = async () => {
@@ -96,54 +101,48 @@ const LoginScreen = () => {
                 currentApiUrl={currentApiUrl}
             />
             
-            {/* 3. Botão de configurações renderizado PRIMEIRO para ficar "atrás" */}
             <View style={styles.headerContainer}>
                 <AnimatedButton 
-                    style={[styles.settingsButton, isKeyboardVisible && { opacity: 0.2 }]} // Fica transparente se o teclado estiver visível
-                    onPress={() => !isKeyboardVisible && setSettingsVisible(true)} // Só executa se o teclado não estiver visível
+                    style={[
+                        styles.settingsButton, 
+                        { opacity: isKeyboardVisible ? 0 : 1 }
+                    ]}
+                    onPress={() => !isKeyboardVisible && setSettingsVisible(true)}
                 >
                     <Ionicons name="settings-outline" size={28} color={colors.headerIcon} />
                 </AnimatedButton>
             </View>
 
-            <KeyboardAvoidingView 
-                style={styles.centeringContainer}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View style={styles.innerContainer}>
-                        <View style={styles.loginContainer}>
-                            <View style={styles.logoContainer}>
-                                <Image source={colors.logo512x512} style={styles.logoIcon} />
-                                <Image source={colors.logoName} style={styles.logoName} />
-                            </View>
-                            <Text style={styles.subtitle}>Faça login com seu usuário e senha do Sankhya.</Text>
-
-                            <Text style={styles.label}>Usuário</Text>
-                            <TextInput 
-                                style={styles.input} 
-                                value={username} 
-                                onChangeText={(text) => setUsername(text.replace(/\s/g, ''))} 
-                                autoCapitalize="none" 
-                                autoCompleteType="username" 
-                                placeholderTextColor={colors.textLight}
-                            />
-
-                            <Text style={styles.label}>Senha</Text>
-                            <View style={styles.passwordContainer}>
-                                <TextInput style={styles.passwordInput} value={password} onChangeText={setPassword} secureTextEntry={!isPasswordVisible} autoCapitalize="none" autoCompleteType="password" placeholderTextColor={colors.textLight}/>
-                                <AnimatedButton style={styles.eyeIcon} onPress={() => setPasswordVisible(!isPasswordVisible)}>
-                                    <Ionicons name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} size={24} color={colors.textLight} />
-                                </AnimatedButton>
-                            </View>
-                            
-                            <AnimatedButton style={styles.button} onPress={handleLogin} disabled={isButtonLoading}>
-                                {isButtonLoading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <View style={styles.innerContainer}>
+                    <Animated.View style={[styles.loginContainer, { transform: [{ translateY: keyboardOffset }] }]}>
+                        <View style={styles.logoContainer}>
+                            <Image source={colors.logo512x512} style={styles.logoIcon} />
+                            <Image source={colors.logoName} style={styles.logoName} />
+                        </View>
+                        <Text style={styles.subtitle}>Faça login com seu usuário e senha do Sankhya.</Text>
+                        <Text style={styles.label}>Usuário</Text>
+                        <TextInput 
+                            style={styles.input} 
+                            value={username} 
+                            onChangeText={(text) => setUsername(text.replace(/\s/g, ''))} 
+                            autoCapitalize="none" 
+                            autoComplete="username" 
+                            placeholderTextColor={colors.textLight}
+                        />
+                        <Text style={styles.label}>Senha</Text>
+                        <View style={styles.passwordContainer}>
+                            <TextInput style={styles.passwordInput} value={password} onChangeText={setPassword} secureTextEntry={!isPasswordVisible} autoCapitalize="none" autoComplete="password" placeholderTextColor={colors.textLight}/>
+                            <AnimatedButton style={styles.eyeIcon} onPress={() => setPasswordVisible(!isPasswordVisible)}>
+                                <Ionicons name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} size={24} color={colors.textLight} />
                             </AnimatedButton>
                         </View>
-                    </View>
-                </TouchableWithoutFeedback>
-            </KeyboardAvoidingView>
+                        <AnimatedButton style={styles.button} onPress={handleLogin} disabled={isButtonLoading}>
+                            {isButtonLoading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
+                        </AnimatedButton>
+                    </Animated.View>
+                </View>
+            </TouchableWithoutFeedback>
         </View>
     );
 };
@@ -155,23 +154,21 @@ const getStyles = (colors) => StyleSheet.create({
     },
     headerContainer: {
         ...StyleSheet.absoluteFillObject,
+        zIndex: 0, 
     },
     settingsButton: { 
         position: 'absolute', 
         top: 45, 
         right: 20, 
-        padding: 10 
-    },
-    centeringContainer: { 
-        flex: 1,
+        padding: 10,
     },
     innerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
-        // 4. PointerEvents para permitir cliques "através" desta view
-        pointerEvents: 'box-none', 
+        // CORREÇÃO: Permite que toques "passem" por esta view
+        pointerEvents: 'box-none',
     },
     loginContainer: { 
         backgroundColor: colors.cardBackground, 
@@ -179,8 +176,8 @@ const getStyles = (colors) => StyleSheet.create({
         borderRadius: 12, 
         width: '100%', 
         maxWidth: 400,
-        // Garante que o container de login sempre capture os toques
         pointerEvents: 'auto',
+        zIndex: 1, 
     },
     logoContainer: { 
         alignItems: 'center', 
@@ -226,3 +223,4 @@ const getStyles = (colors) => StyleSheet.create({
 });
 
 export default LoginScreen;
+
