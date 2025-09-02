@@ -47,14 +47,24 @@ const LoginScreen = () => {
         setKeyboardVisible(false);
     };
 
+    // =================================================================
+    // CORREÇÃO: useEffect agora depende de `isSettingsVisible`
+    // =================================================================
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', handleKeyboardShow);
-        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', handleKeyboardHide);
-        return () => {
-            keyboardDidHideListener.remove();
-            keyboardDidShowListener.remove();
-        };
-    }, []);
+        // Apenas adiciona os listeners do teclado se o modal de configurações não estiver visível.
+        if (!isSettingsVisible) {
+            const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', handleKeyboardShow);
+            const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', handleKeyboardHide);
+    
+            // Função de limpeza para remover os listeners quando o modal for aberto.
+            return () => {
+                keyboardDidShowListener.remove();
+                keyboardDidHideListener.remove();
+            };
+        }
+    // A dependência [isSettingsVisible] garante que este efeito rode novamente
+    // sempre que o modal for aberto ou fechado, ativando ou desativando os listeners.
+    }, [isSettingsVisible]);
 
     useEffect(() => {
         const loadUrl = async () => {
@@ -167,7 +177,6 @@ const getStyles = (colors) => StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
-        // CORREÇÃO: Permite que toques "passem" por esta view
         pointerEvents: 'box-none',
     },
     loginContainer: { 
