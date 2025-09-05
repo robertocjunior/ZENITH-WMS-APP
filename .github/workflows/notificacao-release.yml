@@ -2,7 +2,10 @@ name: Notificar Nova Release (API v1)
 
 on:
   release:
-    types: [published]
+    # --- MODIFICADO AQUI ---
+    # O gatilho 'released' cobre a publicação de uma nova release
+    # e também a edição de uma pré-release para se tornar a "latest".
+    types: [released]
 
 jobs:
   notificar:
@@ -22,19 +25,25 @@ jobs:
 
       - name: 'Enviar Notificação de Nova Versão'
         run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ steps.get_access_token.outputs.access_token }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "message": {
-                "topic": "all",
-                "notification": {
-                  "title": "Nova atualização do Zenith WMS! 🚀",
-                  "body": "A versão ${{ github.event.release.tag_name }} está disponível."
-                },
-                "data": {
-                  "version": "${{ github.event.release.tag_name }}"
+          # --- ADICIONADO PASSO PARA GARANTIR QUE NÃO É UMA PRÉ-RELEASE ---
+          # Esta verificação impede que a notificação seja enviada para pré-releases.
+          if [ "${{ github.event.release.prerelease }}" = "false" ]; then
+            curl -X POST \
+              -H "Authorization: Bearer ${{ steps.get_access_token.outputs.access_token }}" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "message": {
+                  "topic": "all",
+                  "notification": {
+                    "title": "Nova atualização do Zenith WMS! 🚀",
+                    "body": "A versão ${{ github.event.release.tag_name }} está disponível."
+                  },
+                  "data": {
+                    "version": "${{ github.event.release.tag_name }}"
+                  }
                 }
-              }
-            }' \
-            https://fcm.googleapis.com/v1/projects/zenith-wms/messages:send
+              }' \
+              https://fcm.googleapis.com/v1/projects/SEU_ID_DE_PROJETO_AQUI/messages:send
+          else
+            echo "Release é uma pré-release. Nenhuma notificação enviada."
+          fi
