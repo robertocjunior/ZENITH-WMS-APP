@@ -49,7 +49,7 @@ jobs:
                   }
                 }
               }' \
-              https://fcm.googleapis.com/v1/projects/SEU_ID_DE_PROJETO_AQUI/messages:send
+              https://fcm.googleapis.com/v1/projects/zenith-wms/messages:send
           else
             echo "Release é uma pré-release. Nenhuma notificação enviada."
           fi
