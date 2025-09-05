@@ -1,0 +1,40 @@
+name: Notificar Nova Release (API v1)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notificar:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 'Autenticar com Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}'
+
+      - name: 'Obter Token de Acesso'
+        id: get_access_token
+        run: |
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: 'Enviar Notificação de Nova Versão'
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.get_access_token.outputs.access_token }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "message": {
+                "topic": "all",
+                "notification": {
+                  "title": "Nova atualização do Zenith WMS! 🚀",
+                  "body": "A versão ${{ github.event.release.tag_name }} está disponível."
+                },
+                "data": {
+                  "version": "${{ github.event.release.tag_name }}"
+                }
+              }
+            }' \
+            https://fcm.googleapis.com/v1/projects/zenith-wms/messages:send
