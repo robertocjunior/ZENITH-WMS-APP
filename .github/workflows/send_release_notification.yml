@@ -1,0 +1,40 @@
+name: Send Release Notification
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  send-notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate with Google
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FCM_SERVICE_ACCOUNT_KEY }}
+
+      - name: Get Google Access Token
+        id: get_access_token
+        run: |
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Send FCM Notification
+        run: |
+          # IMPORTANTE: Troque instalador-zenith pelo ID do seu projeto Firebase.
+          PROJECT_ID="instalador-zenith"
+
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.get_access_token.outputs.access_token }}" \
+            -H "Content-Type: application/json" \
+            "[https://fcm.googleapis.com/v1/projects/$](https://fcm.googleapis.com/v1/projects/$){PROJECT_ID}/messages:send" \
+            -d '{
+                  "message": {
+                    "topic": "new_releases",
+                    "notification": {
+                      "title": "Nova Versão do Instalador Zenith! 🎉",
+                      "body": "A versão ${{ github.event.release.tag_name }} já está disponível para download."
+                    }
+                  }
+                }'
