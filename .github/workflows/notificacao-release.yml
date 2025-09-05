@@ -1,11 +1,13 @@
 name: Notificar Nova Release (API v1)
 
 on:
+  # Gatilho para quando uma release for publicada ou promovida
   release:
-    # --- MODIFICADO AQUI ---
-    # O gatilho 'released' cobre a publicação de uma nova release
-    # e também a edição de uma pré-release para se tornar a "latest".
     types: [released]
+  
+  # --- ADICIONADO AQUI ---
+  # Gatilho para execução manual (gera o botão de teste)
+  workflow_dispatch:
 
 jobs:
   notificar:
@@ -24,10 +26,14 @@ jobs:
           echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
 
       - name: 'Enviar Notificação de Nova Versão'
+        # --- MODIFICADO AQUI ---
+        # Define uma variável de ambiente para lidar com os dois gatilhos
+        env:
+          # Se o gatilho for uma 'release', usa a tag da release.
+          # Se for manual ('workflow_dispatch'), usa o texto 'TESTE MANUAL'.
+          VERSION_NAME: ${{ github.event.release.tag_name || 'TESTE MANUAL' }}
         run: |
-          # --- ADICIONADO PASSO PARA GARANTIR QUE NÃO É UMA PRÉ-RELEASE ---
-          # Esta verificação impede que a notificação seja enviada para pré-releases.
-          if [ "${{ github.event.release.prerelease }}" = "false" ]; then
+          if [ "${{ github.event.release.prerelease }}" != "true" ]; then
             curl -X POST \
               -H "Authorization: Bearer ${{ steps.get_access_token.outputs.access_token }}" \
               -H "Content-Type: application/json" \
@@ -36,10 +42,10 @@ jobs:
                   "topic": "all",
                   "notification": {
                     "title": "Nova atualização do Zenith WMS! 🚀",
-                    "body": "A versão ${{ github.event.release.tag_name }} está disponível."
+                    "body": "A versão ${{ env.VERSION_NAME }} está disponível."
                   },
                   "data": {
-                    "version": "${{ github.event.release.tag_name }}"
+                    "version": "${{ env.VERSION_NAME }}"
                   }
                 }
               }' \
