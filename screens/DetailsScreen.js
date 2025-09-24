@@ -1,8 +1,10 @@
 // screens/DetailsScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native'; // Alert foi removido
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+// 1. Importar o hook useSafeAreaInsets
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as api from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -14,13 +16,14 @@ import TransferModal from '../components/modals/TransferModal';
 import PickingModal from '../components/modals/PickingModal';
 import CorrecaoModal from '../components/modals/CorrecaoModal';
 import AnimatedButton from '../components/common/AnimatedButton';
-// 1. Importar os modais de sucesso e erro
 import SuccessModal from '../components/common/SuccessModal';
 import ErrorModal from '../components/common/ErrorModal';
 
 const DetailsScreen = () => {
     const { colors } = useTheme();
-    const styles = getStyles(colors);
+    // 2. Obter os valores da área segura e passá-los para os estilos
+    const insets = useSafeAreaInsets();
+    const styles = getStyles(colors, insets);
     const route = useRoute();
     const navigation = useNavigation();
     const { permissions, handleApiError, warehouses } = useAuth();
@@ -33,11 +36,8 @@ const DetailsScreen = () => {
     const [isTransferModalVisible, setTransferModalVisible] = useState(false);
     const [isPickingModalVisible, setPickingModalVisible] = useState(false);
     const [isCorrecaoModalVisible, setCorrecaoModalVisible] = useState(false);
-
-    // 2. Adicionar estados para os novos modais
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-
 
     const DetailItem = ({ label, value }) => (
         <View style={styles.detailItem}>
@@ -56,7 +56,6 @@ const DetailsScreen = () => {
                 setDetails({ codarm, sequencia: seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao });
             } catch (err) {
                 handleApiError(err);
-                // 3. Usar o ErrorModal em vez do Alert
                 setError("Não foi possível carregar os dados do item.");
             } finally {
                 setLoading(false);
@@ -65,13 +64,11 @@ const DetailsScreen = () => {
         loadScreenData();
     }, [codArm, sequencia]);
     
-    // Função para fechar o modal de erro e voltar para a tela anterior
     const closeErrorAndGoBack = () => {
         setError(null);
         navigation.goBack();
     }
 
-    // Função para fechar o modal de sucesso e navegar para a tela principal
     const closeSuccessAndRefresh = () => {
         setSuccess(null);
         navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
@@ -170,7 +167,6 @@ const DetailsScreen = () => {
     };
 
     if (loading || !details) {
-        // Se ainda estiver carregando, mostra o overlay, mas também o modal de erro se houver
         return (
             <View style={{ flex: 1, backgroundColor: colors.background }}>
                 <LoadingOverlay visible={loading} />
@@ -181,7 +177,6 @@ const DetailsScreen = () => {
 
     return (
         <View style={styles.container}>
-            {/* 4. Renderizar os novos modais */}
             <SuccessModal
                 visible={!!success}
                 title="Sucesso!"
@@ -253,8 +248,7 @@ const DetailsScreen = () => {
     );
 };
 
-// ... o restante do 'getStyles' permanece o mesmo ...
-const getStyles = (colors) => StyleSheet.create({
+const getStyles = (colors, insets) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -291,6 +285,8 @@ const getStyles = (colors) => StyleSheet.create({
     },
     scrollContainer: {
         padding: SIZES.padding,
+        // Adiciona um padding extra no final da rolagem para não colar no rodapé
+        paddingBottom: SIZES.padding * 2,
     },
     heroCard: {
         backgroundColor: colors.cardBackground,
@@ -340,7 +336,9 @@ const getStyles = (colors) => StyleSheet.create({
         marginTop: 4,
     },
     actionsFooter: {
+        // 3. Aplicar o padding na parte inferior do rodapé de ações
         padding: SIZES.padding,
+        paddingBottom: SIZES.padding + insets.bottom, // Adiciona o espaçamento da safe area
         backgroundColor: colors.cardBackground,
         flexDirection: 'row',
         flexWrap: 'wrap',
