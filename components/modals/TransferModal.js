@@ -7,7 +7,8 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedButton from '../common/AnimatedButton';
 
-const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = [], permissions = {} }) => {
+// ALTERADO: Adiciona a nova prop onValidationError
+const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = [], permissions = {}, onValidationError }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const [quantity, setQuantity] = useState('');
@@ -17,6 +18,9 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
     const [open, setOpen] = useState(false);
     const [warehouseValue, setWarehouseValue] = useState(null);
     const [warehouseItems, setWarehouseItems] = useState([]);
+
+    const isKgProduct = itemDetails?.qtdCompleta?.toUpperCase().includes('KG');
+    const keyboardType = isKgProduct ? 'numeric' : 'number-pad';
 
     useEffect(() => {
         if (visible) {
@@ -34,15 +38,27 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
     }, [visible, itemDetails, warehouses]);
 
     const handleConfirm = () => {
-        const numQuantity = parseInt(quantity, 10);
+        if (!isKgProduct && (String(quantity).includes(',') || String(quantity).includes('.'))) {
+            // ALTERADO: Usa a nova função de erro em vez do alert
+            onValidationError('Este produto não aceita casas decimais. Por favor, insira um número inteiro.');
+            return;
+        }
+
+        const numQuantity = isKgProduct
+            ? parseFloat(String(quantity).replace(',', '.'))
+            : parseInt(String(quantity), 10);
+            
         if (isNaN(numQuantity) || numQuantity <= 0) {
-            return alert('Por favor, insira uma quantidade válida.');
+            onValidationError('Por favor, insira uma quantidade válida.');
+            return;
         }
         if (!warehouseValue) {
-            return alert('Por favor, selecione um armazém de destino.');
+            onValidationError('Por favor, selecione um armazém de destino.');
+            return;
         }
         if (!destinationAddress.trim()) {
-            return alert('Por favor, insira um endereço de destino.');
+            onValidationError('Por favor, insira um endereço de destino.');
+            return;
         }
 
         onConfirm({
@@ -71,7 +87,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
                     </Text>
 
                     <Text style={styles.label}>Quantidade a transferir:</Text>
-                    <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType="numeric" />
+                    <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType={keyboardType} />
 
                     <Text style={styles.label}>Armazém de Destino:</Text>
                     <DropDownPicker
@@ -116,6 +132,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
     );
 };
 
+// ... (o restante do arquivo getStyles permanece o mesmo)
 const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,

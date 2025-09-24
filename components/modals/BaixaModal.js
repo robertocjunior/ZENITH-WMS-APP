@@ -5,10 +5,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { SIZES } from '../../constants/theme';
 import AnimatedButton from '../common/AnimatedButton';
 
-const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
+// ALTERADO: Adiciona a nova prop onValidationError
+const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationError }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const [quantity, setQuantity] = useState('');
+
+    const isKgProduct = itemDetails?.qtdCompleta?.toUpperCase().includes('KG');
+    const keyboardType = isKgProduct ? 'numeric' : 'number-pad';
 
     useEffect(() => {
         if (visible && itemDetails) {
@@ -17,9 +21,19 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     }, [visible, itemDetails]);
 
     const handleConfirm = () => {
-        const numQuantity = parseInt(quantity, 10);
+        if (!isKgProduct && (String(quantity).includes(',') || String(quantity).includes('.'))) {
+            // ALTERADO: Usa a nova função de erro em vez do alert
+            onValidationError('Este produto não aceita casas decimais. Por favor, insira um número inteiro.');
+            return;
+        }
+
+        const numQuantity = isKgProduct
+            ? parseFloat(String(quantity).replace(',', '.'))
+            : parseInt(String(quantity), 10);
+            
         if (isNaN(numQuantity) || numQuantity <= 0) {
-            alert('Por favor, insira uma quantidade válida.');
+            // ALTERADO: Usa a nova função de erro em vez do alert
+            onValidationError('Por favor, insira uma quantidade válida.');
             return;
         }
         onConfirm(numQuantity);
@@ -47,7 +61,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                         style={styles.input}
                         value={quantity}
                         onChangeText={setQuantity}
-                        keyboardType="numeric"
+                        keyboardType={keyboardType}
                         placeholder="Digite a quantidade"
                         placeholderTextColor={colors.textLight}
                         autoFocus={true}
@@ -67,6 +81,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     );
 };
 
+// ... (o restante do arquivo getStyles permanece o mesmo)
 const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,

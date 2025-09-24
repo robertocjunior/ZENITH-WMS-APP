@@ -7,7 +7,8 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import * as api from '../../api';
 import AnimatedButton from '../common/AnimatedButton';
 
-const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
+// ALTERADO: Adiciona a nova prop onValidationError
+const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationError }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const [quantity, setQuantity] = useState('');
@@ -16,6 +17,9 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     const [destinationValue, setDestinationValue] = useState(null);
     const [destinationItems, setDestinationItems] = useState([]);
     const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+
+    const isKgProduct = itemDetails?.qtdCompleta?.toUpperCase().includes('KG');
+    const keyboardType = isKgProduct ? 'numeric' : 'number-pad';
 
     useEffect(() => {
         const fetchLocations = async () => {
@@ -34,6 +38,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
 
                 } catch (error) {
                     console.error("Erro ao buscar locais de picking:", error);
+                    // Aqui um alert ainda faz sentido pois é um erro de carregamento de dados
                     alert("Não foi possível carregar os destinos de picking.");
                 } finally {
                     setIsLoadingLocations(false);
@@ -52,12 +57,23 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     }, [visible, itemDetails]);
 
     const handleConfirm = () => {
-        const numQuantity = parseInt(quantity, 10);
+        if (!isKgProduct && (String(quantity).includes(',') || String(quantity).includes('.'))) {
+            // ALTERADO: Usa a nova função de erro em vez do alert
+            onValidationError('Este produto não aceita casas decimais. Por favor, insira um número inteiro.');
+            return;
+        }
+
+        const numQuantity = isKgProduct
+            ? parseFloat(String(quantity).replace(',', '.'))
+            : parseInt(String(quantity), 10);
+
         if (isNaN(numQuantity) || numQuantity <= 0) {
-            return alert('Por favor, insira uma quantidade válida.');
+            onValidationError('Por favor, insira uma quantidade válida.');
+            return;
         }
         if (!destinationValue) {
-            return alert('Por favor, selecione um destino de picking.');
+            onValidationError('Por favor, selecione um destino de picking.');
+            return;
         }
         
         onConfirm({
@@ -84,7 +100,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
                     </Text>
 
                     <Text style={styles.label}>Quantidade a mover:</Text>
-                    <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType="number-pad"/>
+                    <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType={keyboardType}/>
 
                     <Text style={styles.label}>Destino de Picking:</Text>
                     <DropDownPicker
@@ -121,6 +137,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     );
 };
 
+// ... (o restante do arquivo getStyles permanece o mesmo)
 const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,

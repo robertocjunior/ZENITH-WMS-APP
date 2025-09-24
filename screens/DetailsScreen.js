@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-// 1. Importar o hook useSafeAreaInsets
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as api from '../api';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,7 +20,6 @@ import ErrorModal from '../components/common/ErrorModal';
 
 const DetailsScreen = () => {
     const { colors } = useTheme();
-    // 2. Obter os valores da área segura e passá-los para os estilos
     const insets = useSafeAreaInsets();
     const styles = getStyles(colors, insets);
     const route = useRoute();
@@ -38,6 +36,8 @@ const DetailsScreen = () => {
     const [isCorrecaoModalVisible, setCorrecaoModalVisible] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+    // NOVO: Estado para controlar erros de validação dos modais
+    const [validationError, setValidationError] = useState(null);
 
     const DetailItem = ({ label, value }) => (
         <View style={styles.detailItem}>
@@ -67,6 +67,11 @@ const DetailsScreen = () => {
     const closeErrorAndGoBack = () => {
         setError(null);
         navigation.goBack();
+    }
+    
+    // NOVO: Função para simplesmente fechar o modal de erro de validação
+    const clearValidationError = () => {
+        setValidationError(null);
     }
 
     const closeSuccessAndRefresh = () => {
@@ -188,12 +193,20 @@ const DetailsScreen = () => {
                 errorMessage={error}
                 onClose={closeErrorAndGoBack}
             />
+            {/* NOVO: Instância do ErrorModal para os erros de validação */}
+            <ErrorModal
+                visible={!!validationError}
+                errorMessage={validationError}
+                onClose={clearValidationError}
+            />
 
             <BaixaModal
                 visible={isBaixaModalVisible}
                 onClose={() => setBaixaModalVisible(false)}
                 onConfirm={handleConfirmBaixa}
                 itemDetails={details}
+                // ALTERADO: Passa a função de validação para o modal
+                onValidationError={setValidationError}
             />
             <TransferModal
                 visible={isTransferModalVisible}
@@ -202,12 +215,16 @@ const DetailsScreen = () => {
                 itemDetails={details}
                 warehouses={warehouses}
                 permissions={permissions}
+                // ALTERADO: Passa a função de validação para o modal
+                onValidationError={setValidationError}
             />
             <PickingModal
                 visible={isPickingModalVisible}
                 onClose={() => setPickingModalVisible(false)}
                 onConfirm={handleConfirmPicking}
                 itemDetails={details}
+                 // ALTERADO: Passa a função de validação para o modal
+                onValidationError={setValidationError}
             />
             <CorrecaoModal
                 visible={isCorrecaoModalVisible}
@@ -247,7 +264,7 @@ const DetailsScreen = () => {
         </View>
     );
 };
-
+// ... (o restante do arquivo getStyles permanece o mesmo)
 const getStyles = (colors, insets) => StyleSheet.create({
     container: {
         flex: 1,
@@ -285,7 +302,6 @@ const getStyles = (colors, insets) => StyleSheet.create({
     },
     scrollContainer: {
         padding: SIZES.padding,
-        // Adiciona um padding extra no final da rolagem para não colar no rodapé
         paddingBottom: SIZES.padding * 2,
     },
     heroCard: {
@@ -336,9 +352,8 @@ const getStyles = (colors, insets) => StyleSheet.create({
         marginTop: 4,
     },
     actionsFooter: {
-        // 3. Aplicar o padding na parte inferior do rodapé de ações
         padding: SIZES.padding,
-        paddingBottom: SIZES.padding + insets.bottom, // Adiciona o espaçamento da safe area
+        paddingBottom: SIZES.padding + insets.bottom,
         backgroundColor: colors.cardBackground,
         flexDirection: 'row',
         flexWrap: 'wrap',
