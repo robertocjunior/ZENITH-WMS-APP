@@ -83,9 +83,8 @@ const SettingsModal = ({ visible, onClose, onSave, currentApiUrl }) => {
                         style={styles.centeringContainer} 
                         behavior={Platform.OS === "ios" ? "padding" : "height"}
                     >
-                        {/* O Pressable aqui serve para o stopPropagation */}
-                        <Pressable onPress={(e) => e.stopPropagation()}>
-                             {/* E o Animated.View é o card do modal */}
+                        {/* ALTERAÇÃO 1: Adicionado um novo estilo ao Pressable que envolve o card */}
+                        <Pressable style={styles.modalCardWrapper} onPress={(e) => e.stopPropagation()}>
                             <Animated.View style={[styles.modalContent, { opacity: modalOpacity, transform: [{ scale: modalScale }] }]}>
                                 <Text style={styles.title}>Configurações</Text>
                                 
@@ -136,10 +135,16 @@ const getStyles = (colors) => StyleSheet.create({
     centeringContainer: {
         width: '100%',
         padding: 20,
+        alignItems: 'center',
     },
-    modalContent: {
+    // NOVO: Estilo para o "invólucro" do modal que vai definir a largura
+    modalCardWrapper: {
         width: '100%',
         maxWidth: 400,
+    },
+    // ALTERAÇÃO 2: O modalContent agora só precisa ter 100% de largura do invólucro
+    modalContent: {
+        width: '100%',
         backgroundColor: colors.cardBackground,
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
@@ -150,19 +155,19 @@ const getStyles = (colors) => StyleSheet.create({
         width: '100%', 
         padding: 12, 
         fontSize: 16, 
-        borderRadius: SIZES.radius, 
+        borderRadius: 8,
         borderWidth: 1, 
         borderColor: colors.border, 
-        marginBottom: 25,
         backgroundColor: colors.inputBackground,
         color: colors.text,
     },
     confirmButton: { 
-        backgroundColor: colors.primary,
-        padding: 15,
-        borderRadius: SIZES.radius,
-        alignItems: 'center',
         width: '100%',
+        padding: 15,
+        backgroundColor: colors.primary,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 25,
     },
     confirmButtonText: { 
         color: colors.white, 
