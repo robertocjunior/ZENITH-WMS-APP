@@ -2,13 +2,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// --- 1. LÓGICA DE URL DINÂMICA ---
 const API_URL_KEY = 'zenith_api_base_url';
-const DEFAULT_API_URL = 'http://zenith.nicocereais.com.br:3030'; // Um valor padrão caso nenhum seja salvo
+const DEFAULT_API_URL = 'https://zenith.nicocereais.com.br:3080';
 
 let API_BASE_URL = '';
 
-// Função para carregar e definir a URL da API
 export const initializeApiUrl = async () => {
     const savedUrl = await AsyncStorage.getItem(API_URL_KEY);
     API_BASE_URL = savedUrl || DEFAULT_API_URL;
@@ -16,40 +14,50 @@ export const initializeApiUrl = async () => {
     return API_BASE_URL;
 };
 
-// Função para atualizar e salvar a URL
 export const setApiUrl = async (url) => {
     await AsyncStorage.setItem(API_URL_KEY, url);
     API_BASE_URL = url;
     console.log(`API URL atualizada para: ${API_BASE_URL}`);
 };
-// ---------------------------------
 
+// =================================================================
+// ALTERADO: A função foi reestruturada para tratar o erro 401 corretamente
+// =================================================================
 async function authenticatedFetch(endpoint, body = {}) {
     const token = await AsyncStorage.getItem('sessionToken');
     if (!token) {
-        throw new Error('401'); 
+        // Se não há token, é um erro de autorização que força o logout
+        const authError = new Error('Nenhum token de sessão encontrado.');
+        authError.reauthRequired = true; // Força o logout no AuthContext
+        throw authError;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api${endpoint}`, { // Adiciona o /api aqui
+    const response = await fetch(`${API_BASE_URL}/api${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(body),
     });
-
-    if (response.status === 401) throw new Error('401');
     
     const responseText = await response.text();
     const data = responseText ? JSON.parse(responseText) : null;
 
     if (!response.ok) {
-        throw new Error(data ? data.message : 'Erro na comunicação com o servidor.');
+        // Centraliza o tratamento de todos os erros aqui
+        const message = data ? data.message : `Erro ${response.status}`;
+        const error = new Error(message);
+        
+        // Se o backend enviar a flag, anexa ao erro para o AuthContext detectar
+        if (data && data.reauthRequired) {
+            error.reauthRequired = true;
+        }
+        throw error;
     }
     
     return data;
 }
 
 export async function login(username, password) {
-    if (!API_BASE_URL) await initializeApiUrl(); // Garante que a URL esteja carregada
+    if (!API_BASE_URL) await initializeApiUrl();
 
     const userTokenKey = `deviceToken_${username.toUpperCase()}`;
     let deviceToken = await AsyncStorage.getItem(userTokenKey);
@@ -83,16 +91,16 @@ export async function login(username, password) {
         console.warn('AVISO: O sessionToken não foi recebido do servidor após o login.');
     }
 
-    await AsyncStorage.setItem('userSession', JSON.stringify(data));
+    // A sessão completa (com permissões, etc) é salva no AuthContext após o login
     return data;
 }
 
-// ... (resto das funções da API permanecem as mesmas)
 export async function logout() {
-    await authenticatedFetch('/logout');
+    await authenticatedFetch('/logout').catch(() => {}); // Ignora erros no logout
     await AsyncStorage.removeItem('sessionToken');
     await AsyncStorage.removeItem('userSession');
 }
+
 export const fetchWarehouses = () => authenticatedFetch('/get-warehouses');
 export const fetchPermissions = () => authenticatedFetch('/get-permissions');
 export const searchItems = (codArm, filtro) => authenticatedFetch('/search-items', { codArm, filtro });

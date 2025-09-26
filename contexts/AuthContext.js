@@ -19,6 +19,10 @@ export const AuthProvider = ({ children }) => {
     const [lastWarehouse, setLastWarehouse] = useState(null);
     const [lastUsername, setLastUsername] = useState('');
 
+    // NOVO: Estados para controlar o fluxo de re-autenticação
+    const [isReAuthVisible, setIsReAuthVisible] = useState(false);
+    const [requestToRetry, setRequestToRetry] = useState(null);
+
     const loadLastWarehouseForUser = async (codusu) => {
         try {
             const storedData = await AsyncStorage.getItem(LAST_WAREHOUSES_KEY);
@@ -80,7 +84,6 @@ export const AuthProvider = ({ children }) => {
                     setAuthStatus('loggedIn');
                 } catch (error) {
                     handleApiError(error);
-                    // O logout já é chamado dentro de handleApiError, se necessário
                 }
             }
         };
@@ -94,7 +97,7 @@ export const AuthProvider = ({ children }) => {
             await AsyncStorage.setItem(LAST_USERNAME_KEY, username);
             setLastUsername(username);
             setUserSession(response);
-            setAuthStatus('authenticating');
+            setAuthStatus('authenticating'); // Isso irá acionar o useEffect acima para buscar dados
         } catch (error) {
             handleApiError(error);
             throw error;
@@ -112,7 +115,7 @@ export const AuthProvider = ({ children }) => {
             setWarehouses([]);
             setLastWarehouse(null);
             setAuthStatus('loggedOut');
-            await AsyncStorage.removeItem('userSession');
+            // A remoção do storage já acontece dentro de api.logout()
         }
     };
 
@@ -127,18 +130,50 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const handleApiError = (error) => {
-        // --- LÓGICA DE AUTO-LOGOUT ---
-        // Verifica se a resposta de erro contém a flag 'reauthRequired'
-        if (error.response?.data?.reauthRequired) {
-            // Define a mensagem de erro específica para o modal
-            setApiError(error.response.data.message || "Sua sessão expirou. Faça o login novamente.");
-            // Executa o logout para limpar a sessão e redirecionar para a tela de login
-            logout();
-        } else {
-            // Para todos os outros erros, exibe a mensagem padrão
+    // ALTERADO: Lógica de erro completamente nova
+    const handleApiError = (error, retryFunc = null) => {
+        if (error.reauthRequired && retryFunc) {
+            setRequestToRetry(() => () => retryFunc());
+            setIsReAuthVisible(true);
+        } else if (error.reauthRequired || error.message === '401') {
+             setApiError("Sua sessão expirou. Por favor, faça login novamente.");
+             logout();
+        }
+        else {
             setApiError(error.message || 'Ocorreu um erro inesperado.');
         }
+    };
+
+    // NOVO: Função para lidar com a confirmação do modal de re-autenticação
+    const handleReAuth = async (password) => {
+        const currentUsername = userSession?.username || lastUsername;
+        if (!currentUsername) return false;
+
+        try {
+            const newSessionData = await api.login(currentUsername, password);
+            const sessionToSave = { userSession: newSessionData, permissions, warehouses };
+            await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
+            setUserSession(newSessionData);
+
+            setIsReAuthVisible(false);
+            
+            if (requestToRetry) {
+                const retry = requestToRetry;
+                setRequestToRetry(null);
+                await retry();
+            }
+            return true;
+        } catch (error) {
+            setApiError(error.message || 'Senha incorreta ou falha no login.');
+            return false;
+        }
+    };
+
+    // NOVO: Função para cancelar a re-autenticação e fazer logout
+    const cancelReAuth = () => {
+        setIsReAuthVisible(false);
+        setRequestToRetry(null);
+        logout();
     };
 
     const value = {
@@ -155,6 +190,10 @@ export const AuthProvider = ({ children }) => {
         lastWarehouse,
         saveLastWarehouse,
         lastUsername,
+        // NOVO: Exporta os novos estados e funções
+        isReAuthVisible,
+        handleReAuth,
+        cancelReAuth,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

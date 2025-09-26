@@ -36,7 +36,6 @@ const DetailsScreen = () => {
     const [isCorrecaoModalVisible, setCorrecaoModalVisible] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-    // NOVO: Estado para controlar erros de validação dos modais
     const [validationError, setValidationError] = useState(null);
 
     const DetailItem = ({ label, value }) => (
@@ -55,7 +54,7 @@ const DetailsScreen = () => {
                 const [codarm, seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao] = detailsData;
                 setDetails({ codarm, sequencia: seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao });
             } catch (err) {
-                handleApiError(err);
+                handleApiError(err); // Não precisa de retry aqui
                 setError("Não foi possível carregar os dados do item.");
             } finally {
                 setLoading(false);
@@ -69,7 +68,6 @@ const DetailsScreen = () => {
         navigation.goBack();
     }
     
-    // NOVO: Função para simplesmente fechar o modal de erro de validação
     const clearValidationError = () => {
         setValidationError(null);
     }
@@ -82,12 +80,17 @@ const DetailsScreen = () => {
     const handleConfirmBaixa = async (quantity) => {
         setBaixaModalVisible(false);
         setLoading(true);
-        try {
+
+        const doRequest = async () => {
             const payload = { codarm: details.codarm, sequencia: details.sequencia, quantidade: quantity };
             const result = await api.executeTransaction('baixa', payload);
             setSuccess(result.message || "Baixa realizada com sucesso!");
+        };
+
+        try {
+            await doRequest();
         } catch (error) {
-            handleApiError(error);
+            handleApiError(error, doRequest);
         } finally {
             setLoading(false);
         }
@@ -96,7 +99,8 @@ const DetailsScreen = () => {
     const handleConfirmTransfer = async (transferData) => {
         setTransferModalVisible(false);
         setLoading(true);
-        try {
+        
+        const doRequest = async () => {
             const payload = {
                 origem: details,
                 destino: {
@@ -108,8 +112,12 @@ const DetailsScreen = () => {
             };
             const result = await api.executeTransaction('transferencia', payload);
             setSuccess(result.message || "Transferência realizada com sucesso!");
+        };
+
+        try {
+            await doRequest();
         } catch (error) {
-            handleApiError(error);
+            handleApiError(error, doRequest);
         } finally {
             setLoading(false);
         }
@@ -118,7 +126,8 @@ const DetailsScreen = () => {
     const handleConfirmPicking = async (pickingData) => {
         setPickingModalVisible(false);
         setLoading(true);
-        try {
+
+        const doRequest = async () => {
             const payload = {
                 origem: details,
                 destino: {
@@ -129,8 +138,12 @@ const DetailsScreen = () => {
             };
             const result = await api.executeTransaction('picking', payload);
             setSuccess(result.message || "Movido para picking com sucesso!");
+        };
+
+        try {
+            await doRequest();
         } catch (error) {
-            handleApiError(error);
+            handleApiError(error, doRequest);
         } finally {
             setLoading(false);
         }
@@ -139,7 +152,8 @@ const DetailsScreen = () => {
     const handleConfirmCorrecao = async (newQuantity) => {
         setCorrecaoModalVisible(false);
         setLoading(true);
-        try {
+        
+        const doRequest = async () => {
             const payload = {
                 codarm: details.codarm,
                 sequencia: details.sequencia,
@@ -147,8 +161,12 @@ const DetailsScreen = () => {
             };
             const result = await api.executeTransaction('correcao', payload);
             setSuccess(result.message || "Quantidade corrigida com sucesso!");
+        };
+
+        try {
+            await doRequest();
         } catch (error) {
-            handleApiError(error);
+            handleApiError(error, doRequest);
         } finally {
             setLoading(false);
         }
@@ -193,7 +211,6 @@ const DetailsScreen = () => {
                 errorMessage={error}
                 onClose={closeErrorAndGoBack}
             />
-            {/* NOVO: Instância do ErrorModal para os erros de validação */}
             <ErrorModal
                 visible={!!validationError}
                 errorMessage={validationError}
@@ -205,7 +222,6 @@ const DetailsScreen = () => {
                 onClose={() => setBaixaModalVisible(false)}
                 onConfirm={handleConfirmBaixa}
                 itemDetails={details}
-                // ALTERADO: Passa a função de validação para o modal
                 onValidationError={setValidationError}
             />
             <TransferModal
@@ -215,7 +231,6 @@ const DetailsScreen = () => {
                 itemDetails={details}
                 warehouses={warehouses}
                 permissions={permissions}
-                // ALTERADO: Passa a função de validação para o modal
                 onValidationError={setValidationError}
             />
             <PickingModal
@@ -223,7 +238,6 @@ const DetailsScreen = () => {
                 onClose={() => setPickingModalVisible(false)}
                 onConfirm={handleConfirmPicking}
                 itemDetails={details}
-                 // ALTERADO: Passa a função de validação para o modal
                 onValidationError={setValidationError}
             />
             <CorrecaoModal
@@ -264,7 +278,6 @@ const DetailsScreen = () => {
         </View>
     );
 };
-// ... (o restante do arquivo getStyles permanece o mesmo)
 const getStyles = (colors, insets) => StyleSheet.create({
     container: {
         flex: 1,
