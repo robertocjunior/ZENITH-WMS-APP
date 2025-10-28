@@ -1,4 +1,4 @@
-// contexts/AuthContext.js
+// contexts/AuthContext.js (MODIFICADO)
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as api from '../api';
@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
             setUserSession(response);
             setAuthStatus('authenticating'); // Isso irá acionar o useEffect acima para buscar dados
         } catch (error) {
-            handleApiError(error);
+            handleApiError(error); // O handleApiError agora tratará o 426
             throw error;
         }
     };
@@ -130,12 +130,29 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // ALTERADO: Lógica de erro completamente nova
+    // **** MODIFICADO: Lógica de erro atualizada para incluir 426 ****
     const handleApiError = (error, retryFunc = null) => {
+        
+        // **** ADICIONADO: Tratamento para 426 Upgrade Required ****
+        if (error.statusCode === 426) {
+            console.warn("Erro 426 detectado:", error.message);
+            setApiError(error.message || 'Seu aplicativo está desatualizado. Por favor, atualize.');
+            // Se o erro 426 ocorrer durante o login ou autenticação,
+            // ou se já estiver logado, força o logout para
+            // garantir que o usuário não fique em um estado inconsistente.
+            if (authStatus === 'loggedIn' || authStatus === 'authenticating' || authStatus === 'loggedOut') {
+                 // Se não estiver 'loggedOut', faz o logout
+                 if (authStatus !== 'loggedOut') {
+                    logout();
+                 }
+            }
+            return; // Interrompe aqui
+        }
+
         if (error.reauthRequired && retryFunc) {
             setRequestToRetry(() => () => retryFunc());
             setIsReAuthVisible(true);
-        } else if (error.reauthRequired || error.message === '401') {
+        } else if (error.reauthRequired || error.statusCode === 401 || error.message === '401') { // Mantido 401 e reauth
              setApiError("Sua sessão expirou. Por favor, faça login novamente.");
              logout();
         }
@@ -148,6 +165,8 @@ export const AuthProvider = ({ children }) => {
     const handleReAuth = async (password) => {
         const currentUsername = userSession?.username || lastUsername;
         if (!currentUsername) return false;
+        
+        setApiError(null); // Limpa erros antigos
 
         try {
             const newSessionData = await api.login(currentUsername, password);
@@ -164,7 +183,14 @@ export const AuthProvider = ({ children }) => {
             }
             return true;
         } catch (error) {
-            setApiError(error.message || 'Senha incorreta ou falha no login.');
+            // Se a re-autenticação falhar (senha errada ou versão desatualizada),
+            // o handleApiError será chamado pelo api.login
+            handleApiError(error); 
+            // Se o erro foi 426, o handleApiError já fez o logout.
+            // Se foi senha errada (ex: 401 ou 400), apenas exibe o erro no modal de re-auth.
+            if(error.statusCode !== 426) {
+                 setApiError(error.message || 'Senha incorreta ou falha no login.');
+            }
             return false;
         }
     };

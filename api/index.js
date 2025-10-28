@@ -1,4 +1,4 @@
-// api/index.js
+// api/index.js (MODIFICADO)
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 // Importa crypto se ainda não estiver importado (necessário para o fallback do deviceToken)
@@ -9,6 +9,11 @@ const DEFAULT_API_URL = 'https://zenith.nicocereais.com.br:3080';
 
 const SESSION_TOKEN_KEY = 'sessionToken';
 const SNK_SESSION_ID_KEY = 'snkjsessionid';
+
+// **** ADICIONADO: Pega a versão do app.json ****
+// Use expoConfig.version (do app.json) ou Application.nativeApplicationVersion (nativo)
+const APP_VERSION = Constants.expoConfig?.version || '0.0.0';
+console.log(`[App Version] ${APP_VERSION}`); // Log para depuração
 
 let API_BASE_URL = '';
 
@@ -42,7 +47,11 @@ async function authenticatedFetch(endpoint, body = {}) {
         throw authError;
     }
 
-    const headers = { 'Content-Type': 'application/json' };
+    // **** MODIFICADO: Adicionado X-App-Version ****
+    const headers = { 
+        'Content-Type': 'application/json',
+        'X-App-Version': APP_VERSION 
+    };
 
     const transactionType = body.type;
     const requiresSpecialCookie = endpoint === '/execute-transaction' &&
@@ -87,7 +96,7 @@ async function authenticatedFetch(endpoint, body = {}) {
             if (data && data.reauthRequired) {
                 error.reauthRequired = true;
             }
-            error.statusCode = response.status;
+            error.statusCode = response.status; // Passa o status code no erro
             throw error;
         }
 
@@ -132,7 +141,11 @@ export async function login(username, password) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            // **** MODIFICADO: Adicionado X-App-Version ****
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-App-Version': APP_VERSION
+            },
             body: JSON.stringify({ username, password, deviceToken }),
             signal: controller.signal
         });
@@ -153,7 +166,11 @@ export async function login(username, password) {
             if (data && data.deviceToken) {
                  await AsyncStorage.setItem(userTokenKey, data.deviceToken);
             }
-            throw new Error(data.message || 'Erro desconhecido no login.');
+             // **** ADICIONADO: Tratamento do 426 no login ****
+            const message = data ? data.message : 'Erro desconhecido no login.';
+            const error = new Error(message);
+            error.statusCode = response.status; // Passa o status code no erro
+            throw error;
         }
 
         if (data && data.deviceToken) {
@@ -182,7 +199,7 @@ export async function login(username, password) {
              console.error(`Timeout da requisição de login`);
              throw new Error('O servidor de login demorou muito para responder. Verifique a URL da API ou tente novamente.');
         }
-        // Re-lança outros erros
+        // Re-lança outros erros (incluindo o 426)
         throw error;
     }
 }
@@ -223,7 +240,8 @@ export async function logout() {
                      // pois podem já ter sido limpos ou podem falhar.
                      // O backend /logout deve ser capaz de lidar com isso
                      // (ex: invalidar o cookie se presente, ou apenas retornar sucesso).
-                     'Content-Type': 'application/json'
+                     'Content-Type': 'application/json',
+                     'X-App-Version': APP_VERSION // **** ADICIONADO: Envia a versão também no logout (boa prática) ****
                  },
                  body: JSON.stringify({}), // Corpo vazio
                  signal: controller.signal
