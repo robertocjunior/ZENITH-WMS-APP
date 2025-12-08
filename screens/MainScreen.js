@@ -32,19 +32,20 @@ const MainScreen = ({ navigation }) => {
         const wh = searchWarehouse || warehouseValue;
         const ft = searchFilter !== undefined ? searchFilter : filter;
         Keyboard.dismiss();
+        
         if (!wh) {
             if (route.params?.refresh) return;
             setError("Selecione um armazém para buscar.");
             return;
         }
+        
         setLoading(true);
         try {
+            // A API agora retorna um array de objetos JSON
             const result = await api.searchItems(String(wh), ft);
-            setItems(result);
+            setItems(result || []);
         } catch (err) {
-            // Esta chamada agora acionará o auto-logout se a sessão expirar
             handleApiError(err); 
-            // setError(err.message || "Erro na busca."); // Opcional: pode remover se handleApiError já mostra um modal
         } finally {
             setLoading(false);
         }
@@ -73,38 +74,22 @@ const MainScreen = ({ navigation }) => {
 
             if (route.params?.refresh) {
                 const { warehouseValue: refreshWh, filter: refreshFt } = route.params;
-
-                // *** INÍCIO DA CORREÇÃO ***
-                // Lógica defensiva: Se os parâmetros de refresh não vierem,
-                // usamos os valores de estado atuais (que foram carregados do lastWarehouse).
-                // Isso evita que o armazém seja redefinido para 'undefined'
-                // se a tela anterior (ex: Details) não passar o 'warehouseValue' ao voltar.
-
-                const whToSearch = refreshWh !== undefined ? refreshWh : warehouseValue;
-                const ftToSearch = refreshFt !== undefined ? refreshFt : filter;
-
-                // Apenas atualiza o estado do armazém se um NOVO valor foi passado
-                if (refreshWh !== undefined) {
-                    setWarehouseValue(refreshWh);
-                }
-                
-                // Apenas atualiza o estado do filtro se um NOVO valor foi passado
-                if (refreshFt !== undefined) {
-                    setFilter(refreshFt);
-                }
-                
-                // Executa a busca com os valores corretos (os novos ou os que já estavam)
-                handleSearch(whToSearch, ftToSearch);
-                
+                setWarehouseValue(refreshWh);
+                setFilter(refreshFt);
+                handleSearch(refreshWh, refreshFt);
                 navigation.setParams({ refresh: false });
-                // *** FIM DA CORREÇÃO ***
             }
-        }, [route.params?.refresh, colors, warehouseValue, filter]) // Adicionamos warehouseValue e filter às dependências
+        }, [route.params?.refresh, colors])
     );
     
     useEffect(() => {
+        // CORREÇÃO: Adaptação para ler array de objetos ({ codarm, nome })
         if (warehouses && warehouses.length > 0) {
-            const formattedWarehouses = warehouses.map(([cod, desc]) => ({ label: desc, value: cod }));
+            const formattedWarehouses = warehouses.map(wh => ({
+                label: wh.nome,   // Antes era wh[1]
+                value: wh.codarm  // Antes era wh[0]
+            }));
+            
             setWarehouseItems(formattedWarehouses);
 
             const lastUsedIsValid = formattedWarehouses.some(wh => wh.value === lastWarehouse);
@@ -176,7 +161,8 @@ const MainScreen = ({ navigation }) => {
 
             <FlatList
                 data={items}
-                keyExtractor={(item) => item[0].toString()}
+                // CORREÇÃO: O backend retorna 'seqEnd' no objeto JSON, não mais um array indexado
+                keyExtractor={(item) => (item.seqEnd ? item.seqEnd.toString() : Math.random().toString())}
                 renderItem={({ item }) => <ResultCard item={item} onPress={handleShowDetails} />}
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={() => (

@@ -1,11 +1,10 @@
-// contexts/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as api from '../api';
 
 const AuthContext = createContext(null);
 
-const MINIMUM_LOADING_TIME = 2000; // Reduzi levemente para agilizar
+const MINIMUM_LOADING_TIME = 2000;
 const LAST_WAREHOUSES_KEY = 'lastUsedWarehouses';
 const LAST_USERNAME_KEY = 'lastUsername';
 
@@ -37,6 +36,36 @@ export const AuthProvider = ({ children }) => {
         } catch (e) { console.error("Erro storage user:", e); }
     };
 
+    // Função auxiliar para converter os dados de permissão em lista de objetos
+    const parseWarehousesFromPermissions = (perms) => {
+        if (!perms || !perms.LISTA_CODIGOS || !perms.LISTA_NOMES) return [];
+
+        try {
+            // Ex: "1, 2" -> ["1", "2"]
+            const codigos = perms.LISTA_CODIGOS.split(',').map(c => c.trim());
+            
+            // Ex: "1 - ATACADO, 2 - PRODUTO ACABADO" -> ["1 - ATACADO", "2 - PRODUTO ACABADO"]
+            // OBS: O Backend retorna essa lista separada por vírgula na mesma ordem dos códigos
+            const nomesCompletos = perms.LISTA_NOMES.split(',').map(n => n.trim());
+
+            const whList = codigos.map((codigo, index) => {
+                // MODIFICADO: Agora usa diretamente o nome completo (ex: "1 - ATACADO")
+                // Se não houver nome correspondente, usa um fallback
+                let nome = nomesCompletos[index] || `Armazém ${codigo}`;
+                
+                return {
+                    codarm: parseInt(codigo, 10),
+                    nome: nome 
+                };
+            });
+
+            return whList;
+        } catch (e) {
+            console.error("Erro ao processar armazéns:", e);
+            return [];
+        }
+    };
+
     useEffect(() => {
         const checkLogin = async () => {
             try {
@@ -47,7 +76,7 @@ export const AuthProvider = ({ children }) => {
                     const parsedData = JSON.parse(sessionData);
                     setUserSession(parsedData.userSession);
                     setPermissions(parsedData.permissions);
-                    setWarehouses(parsedData.warehouses);
+                    setWarehouses(parsedData.warehouses || []);
                     if (parsedData.userSession?.codusu) {
                         await loadLastWarehouseForUser(parsedData.userSession.codusu);
                     }
@@ -70,9 +99,15 @@ export const AuthProvider = ({ children }) => {
             if (authStatus === 'authenticating' && userSession) {
                 try {
                     const dataPromise = (async () => {
-                        const [perms, whs] = await Promise.all([api.fetchPermissions(), api.fetchWarehouses()]);
+                        // 1. Busca Permissões
+                        const perms = await api.fetchPermissions();
+                        
+                        // 2. Processa Armazéns a partir das permissões
+                        const whs = parseWarehousesFromPermissions(perms);
+
                         const sessionToSave = { userSession, permissions: perms, warehouses: whs };
                         await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
+                        
                         return { perms, whs };
                     })();
 
