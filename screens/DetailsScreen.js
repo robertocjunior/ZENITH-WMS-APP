@@ -50,11 +50,28 @@ const DetailsScreen = () => {
             if (!codArm || !sequencia) return;
             setLoading(true);
             try {
-                const detailsData = await api.fetchItemDetails(String(codArm), sequencia);
-                const [codarm, seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao] = detailsData;
-                setDetails({ codarm, sequencia: seq, rua, predio, apto, codprod, descrprod, marca, datval, quantidade, endpic, qtdCompleta, derivacao });
+                // Backend retorna objeto JSON
+                const data = await api.fetchItemDetails(String(codArm), sequencia);
+                
+                // Mapeia para o estado da tela (INCLUINDO numDoc)
+                setDetails({ 
+                    codarm: data.codArm, 
+                    sequencia: data.seqEnd, 
+                    rua: data.codRua, 
+                    predio: data.codPrd, 
+                    apto: data.codApt, 
+                    codprod: data.codProd, 
+                    descrprod: data.descrProd, 
+                    marca: data.marca, 
+                    datval: data.datVal, 
+                    quantidade: data.qtdPro, 
+                    endpic: data.endPic, 
+                    qtdCompleta: data.qtdCompleta, 
+                    derivacao: data.derivacao,
+                    numDoc: data.numDoc // Campo Adicionado
+                });
             } catch (err) {
-                handleApiError(err); // Não precisa de retry aqui
+                handleApiError(err);
                 setError("Não foi possível carregar os dados do item.");
             } finally {
                 setLoading(false);
@@ -265,6 +282,7 @@ const DetailsScreen = () => {
                 <DetailItem label="Derivação" value={details.derivacao || 'N/A'} />
                 <DetailItem label="Validade" value={formatData(details.datval)} />
                 <DetailItem label="Quantidade" value={details.qtdCompleta || '0'} />
+                <DetailItem label="Nota Fiscal" value={details.numDoc} />
 
                 <Text style={styles.sectionTitle}>LOCALIZAÇÃO</Text>
                 <DetailItem label="Armazém" value={details.codarm} />

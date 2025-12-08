@@ -10,29 +10,43 @@ const ResultCard = ({ item, onPress }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
 
-    const [sequencia, rua, predio, , codprod, descrprod, marca, datval, , endpic, qtdCompleta, derivacao] = item;
+    // Desestrutura propriedades do JSON do backend
+    const { 
+        seqEnd,      
+        codRua,      
+        codPrd,      
+        codProd,     
+        descrProd,   
+        marca,       
+        datVal,      
+        endPic,      
+        qtdCompleta, 
+        derivacao    
+    } = item;
     
-    let displayDesc = descrprod || 'Sem descrição';
+    let displayDesc = descrProd || 'Produto sem descrição';
     if (marca) displayDesc += ` - ${marca}`;
-    if (derivacao) displayDesc += ` - ${derivacao}`;
+    if (derivacao) displayDesc += ` (${derivacao})`;
 
     return (
         <AnimatedButton 
-            style={[styles.card, endpic === 'S' && styles.pickingCard]}
-            onPress={() => onPress(sequencia)}
+            style={[styles.card, endPic === 'S' && styles.pickingCard]}
+            onPress={() => onPress(seqEnd)}
         >
             <View style={styles.header}>
-                <Text style={styles.textLight}>Seq: <Text style={styles.bold}>{sequencia}</Text></Text>
-                <Text style={styles.textLight}>Rua: <Text style={styles.bold}>{rua}</Text></Text>
-                <Text style={styles.textLight}>Prédio: <Text style={styles.bold}>{predio}</Text></Text>
+                <Text style={styles.textLight}>Seq: <Text style={styles.bold}>{seqEnd}</Text></Text>
+                <Text style={styles.textLight}>Rua: <Text style={styles.bold}>{codRua || '-'}</Text></Text>
+                <Text style={styles.textLight}>Prédio: <Text style={styles.bold}>{codPrd || '-'}</Text></Text>
             </View>
             <View style={styles.body}>
                 <Text style={styles.productDesc}>{displayDesc}</Text>
             </View>
             <View style={styles.footer}>
-                <Text style={styles.productCode}>Cód: {codprod}</Text>
-                <Text style={styles.textLight}>Qtd: <Text style={styles.bold}>{qtdCompleta}</Text></Text>
-                <Text style={styles.textLight}>Val: <Text style={styles.validity}>{formatData(datval)}</Text></Text>
+                <Text style={styles.productCode}>Cód: {codProd}</Text>
+                <Text style={styles.textLight}>Qtd: <Text style={styles.bold}>{qtdCompleta || '0'}</Text></Text>
+                {datVal ? (
+                     <Text style={styles.textLight}>Val: <Text style={styles.validity}>{formatData(datVal)}</Text></Text>
+                ) : null}
             </View>
         </AnimatedButton>
     );
@@ -67,6 +81,7 @@ const getStyles = (colors) => StyleSheet.create({
     },
     textLight: {
         color: colors.textLight,
+        fontSize: 13,
     },
     bold: {
         fontWeight: 'bold',

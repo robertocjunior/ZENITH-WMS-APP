@@ -1,3 +1,4 @@
+// api/index.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as crypto from 'expo-crypto';
@@ -58,7 +59,7 @@ async function authenticatedFetch(endpoint, body = {}) {
             authError.reauthRequired = true;
             throw authError;
         }
-        // Envia tanto no Cookie quanto no Header para garantir compatibilidade com o Backend
+        // Envia tanto no Cookie quanto no Header para garantir compatibilidade
         headers['Cookie'] = `sessionToken=${sessionToken}; snkjsessionid=${snkjsessionid}`;
         headers['Snkjsessionid'] = snkjsessionid; 
     } else {
@@ -123,7 +124,6 @@ export async function login(username, password) {
     const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s para login
 
     try {
-        // Rota de login usa /apiv1
         const response = await fetch(`${API_BASE_URL}/apiv1/login`, {
             method: 'POST',
             headers: { 
@@ -185,7 +185,6 @@ export async function logout() {
              const controller = new AbortController();
              setTimeout(() => controller.abort(), 3000); 
 
-             // Rota de logout usa /apiv1
              await fetch(`${API_BASE_URL}/apiv1/logout`, {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json', 'X-App-Version': APP_VERSION },
@@ -199,11 +198,37 @@ export async function logout() {
     }
 }
 
-// REMOVIDO: export const fetchWarehouses = ...
-// As rotas abaixo chamam authenticatedFetch que já prefixa /apiv1
+// Rotas auxiliares
 export const fetchPermissions = () => authenticatedFetch('/permissions');
-export const searchItems = (codArm, filtro) => authenticatedFetch('/search-items', { codArm, filtro });
-export const fetchItemDetails = (codArm, sequencia) => authenticatedFetch('/get-item-details', { codArm: String(codArm), sequencia: String(sequencia) });
+
+// CORREÇÃO: Garante envio de INT para o backend Go
+export const searchItems = (codArm, filtro) => {
+    const codArmInt = parseInt(codArm, 10);
+    const payload = { 
+        codArm: isNaN(codArmInt) ? 0 : codArmInt, 
+        filtro: filtro || "" 
+    };
+    return authenticatedFetch('/search-items', payload);
+};
+
+export const fetchItemDetails = (codArm, sequencia) => {
+    const codArmInt = parseInt(codArm, 10);
+    const payload = { 
+        codArm: isNaN(codArmInt) ? 0 : codArmInt, 
+        sequencia: String(sequencia) 
+    };
+    return authenticatedFetch('/get-item-details', payload);
+}
+
 export const fetchHistory = () => authenticatedFetch('/get-history');
-export const fetchPickingLocations = (codarm, codprod, sequencia) => authenticatedFetch('/get-picking-locations', { codarm, codprod, sequencia });
-export const executeTransaction = (type, payload) => authenticatedFetch('/execute-transaction', { type, payload });
+
+export const fetchPickingLocations = (codarm, codprod, sequencia) => {
+    const payload = {
+        codarm: parseInt(codarm, 10),
+        codprod: parseInt(codprod, 10),
+        sequencia: parseInt(sequencia, 10)
+    };
+    return authenticatedFetch('/get-picking-locations', payload);
+}
+
+export const executeTransaction = (type, payload) => authenticatedFetch('/execute-transaction', { type, payload }); 

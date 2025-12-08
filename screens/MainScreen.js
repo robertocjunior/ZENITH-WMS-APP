@@ -20,6 +20,7 @@ const MainScreen = ({ navigation }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const route = useRoute();
+    
     const [warehouseValue, setWarehouseValue] = useState(null);
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [filter, setFilter] = useState('');
@@ -29,23 +30,26 @@ const MainScreen = ({ navigation }) => {
     const [error, setError] = useState(null);
 
     const handleSearch = async (searchWarehouse, searchFilter) => {
-        const wh = searchWarehouse || warehouseValue;
+        const wh = searchWarehouse !== undefined ? searchWarehouse : warehouseValue;
         const ft = searchFilter !== undefined ? searchFilter : filter;
+        
         Keyboard.dismiss();
         
         if (!wh) {
-            if (route.params?.refresh) return;
-            setError("Selecione um armazém para buscar.");
+            if (!route.params?.refresh) { 
+                setError("Selecione um armazém para buscar.");
+            }
             return;
         }
         
         setLoading(true);
         try {
-            // A API agora retorna um array de objetos JSON
-            const result = await api.searchItems(String(wh), ft);
+            // Passa o valor direto; a API cuida da conversão para int
+            const result = await api.searchItems(wh, ft || "");
             setItems(result || []);
         } catch (err) {
             handleApiError(err); 
+            setItems([]);
         } finally {
             setLoading(false);
         }
@@ -74,8 +78,8 @@ const MainScreen = ({ navigation }) => {
 
             if (route.params?.refresh) {
                 const { warehouseValue: refreshWh, filter: refreshFt } = route.params;
-                setWarehouseValue(refreshWh);
-                setFilter(refreshFt);
+                if (refreshWh) setWarehouseValue(refreshWh);
+                if (refreshFt !== undefined) setFilter(refreshFt);
                 handleSearch(refreshWh, refreshFt);
                 navigation.setParams({ refresh: false });
             }
@@ -83,11 +87,10 @@ const MainScreen = ({ navigation }) => {
     );
     
     useEffect(() => {
-        // CORREÇÃO: Adaptação para ler array de objetos ({ codarm, nome })
         if (warehouses && warehouses.length > 0) {
             const formattedWarehouses = warehouses.map(wh => ({
-                label: wh.nome,   // Antes era wh[1]
-                value: wh.codarm  // Antes era wh[0]
+                label: wh.nome,
+                value: wh.codarm
             }));
             
             setWarehouseItems(formattedWarehouses);
@@ -113,12 +116,14 @@ const MainScreen = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <LoadingOverlay visible={loading} /> 
+            
             <ProfilePanel 
                 visible={isPanelVisible}
                 onClose={() => setPanelVisible(false)}
                 onNavigateToHistory={handleNavigateToHistory}
                 onLogout={handleLogout}
             />
+            
             <ErrorModal
                 visible={!!error}
                 errorMessage={error}
@@ -146,7 +151,7 @@ const MainScreen = ({ navigation }) => {
                         <Ionicons name="search" size={20} color={colors.textLight} style={{marginLeft: 10}} />
                         <TextInput
                             style={styles.searchInput}
-                            placeholder="Buscar..."
+                            placeholder="Buscar"
                             placeholderTextColor={colors.textLight}
                             value={filter}
                             onChangeText={setFilter}
@@ -161,15 +166,18 @@ const MainScreen = ({ navigation }) => {
 
             <FlatList
                 data={items}
-                // CORREÇÃO: O backend retorna 'seqEnd' no objeto JSON, não mais um array indexado
                 keyExtractor={(item) => (item.seqEnd ? item.seqEnd.toString() : Math.random().toString())}
                 renderItem={({ item }) => <ResultCard item={item} onPress={handleShowDetails} />}
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={() => (
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="home-outline" size={60} color={colors.textLight} />
-                        <Text style={styles.emptyText}>Nenhum resultado para exibir</Text>
-                        <Text style={styles.emptySubText}>Selecione um armazém para começar</Text>
+                        <Ionicons name={warehouseValue ? "search-outline" : "home-outline"} size={60} color={colors.textLight} />
+                        <Text style={styles.emptyText}>
+                            {warehouseValue ? "Nenhum resultado encontrado" : "Selecione um armazém"}
+                        </Text>
+                        <Text style={styles.emptySubText}>
+                            {warehouseValue ? "Tente outro filtro" : "para começar a consultar"}
+                        </Text>
                     </View>
                 )}
             />
@@ -237,8 +245,8 @@ const getStyles = (colors) => StyleSheet.create({
         alignItems: 'center',
         paddingTop: '30%',
     },
-    emptyText: { color: colors.textLight, fontSize: 18, marginTop: 15 },
-    emptySubText: { color: colors.textLight, fontSize: 14 }
+    emptyText: { color: colors.textLight, fontSize: 18, marginTop: 15, fontWeight: 'bold' },
+    emptySubText: { color: colors.textLight, fontSize: 14, marginTop: 5 }
 });
 
 export default MainScreen;
