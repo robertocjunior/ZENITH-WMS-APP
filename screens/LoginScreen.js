@@ -30,49 +30,30 @@ const LoginScreen = () => {
     const keyboardOffset = useRef(new Animated.Value(0)).current;
 
     const handleKeyboardShow = () => {
-        Animated.timing(keyboardOffset, {
-            toValue: -125,
-            duration: 200,
-            useNativeDriver: true,
-        }).start();
+        Animated.timing(keyboardOffset, { toValue: -125, duration: 200, useNativeDriver: true }).start();
         setKeyboardVisible(true);
     };
 
     const handleKeyboardHide = () => {
-        Animated.timing(keyboardOffset, {
-            toValue: 0, 
-            duration: 200,
-            useNativeDriver: true,
-        }).start();
+        Animated.timing(keyboardOffset, { toValue: 0, duration: 200, useNativeDriver: true }).start();
         setKeyboardVisible(false);
     };
 
     useEffect(() => {
         if (!isSettingsVisible) {
-            const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', handleKeyboardShow);
-            const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', handleKeyboardHide);
-    
-            return () => {
-                keyboardDidShowListener.remove();
-                keyboardDidHideListener.remove();
-            };
+            const showSub = Keyboard.addListener('keyboardDidShow', handleKeyboardShow);
+            const hideSub = Keyboard.addListener('keyboardDidHide', handleKeyboardHide);
+            return () => { showSub.remove(); hideSub.remove(); };
         }
     }, [isSettingsVisible]);
 
     useEffect(() => {
-        const loadUrl = async () => {
-            const url = await initializeApiUrl();
-            setCurrentApiUrl(url);
-        };
-        loadUrl();
+        initializeApiUrl().then(setCurrentApiUrl);
     }, []);
 
     useFocusEffect(
         useCallback(() => {
-            const setSystemUIColor = async () => {
-                await SystemUI.setBackgroundColorAsync(colors.primary);
-            };
-            setSystemUIColor();
+            SystemUI.setBackgroundColorAsync(colors.primary);
         }, [colors])
     );
 
@@ -83,7 +64,7 @@ const LoginScreen = () => {
         try {
             await login(username, password);
         } catch (error) {
-            console.log("Login failed, context will handle error display");
+            console.log("Login tratado pelo context");
         } finally {
             setIsButtonLoading(false);
         }
@@ -106,10 +87,7 @@ const LoginScreen = () => {
             
             <View style={styles.headerContainer}>
                 <AnimatedButton 
-                    style={[
-                        styles.settingsButton, 
-                        { opacity: isKeyboardVisible ? 0 : 1 }
-                    ]}
+                    style={[styles.settingsButton, { opacity: isKeyboardVisible ? 0 : 1 }]}
                     onPress={() => !isKeyboardVisible && setSettingsVisible(true)}
                 >
                     <Ionicons name="settings-outline" size={28} color={colors.headerIcon} />
@@ -124,24 +102,38 @@ const LoginScreen = () => {
                             <Image source={colors.logoName} style={styles.logoName} />
                         </View>
                         <Text style={styles.subtitle}>Faça login com seu usuário e senha do Sankhya.</Text>
+                        
                         <Text style={styles.label}>Usuário</Text>
                         <TextInput 
                             style={styles.input} 
                             value={username} 
-                            onChangeText={(text) => setUsername(text.replace(/\s/g, ''))} 
+                            onChangeText={(t) => setUsername(t.replace(/\s/g, ''))} 
                             autoCapitalize="none" 
                             autoComplete="username" 
                             placeholderTextColor={colors.textLight}
                         />
+                        
                         <Text style={styles.label}>Senha</Text>
                         <View style={styles.passwordContainer}>
-                            <TextInput style={styles.passwordInput} value={password} onChangeText={setPassword} secureTextEntry={!isPasswordVisible} autoCapitalize="none" autoComplete="password" placeholderTextColor={colors.textLight}/>
+                            <TextInput 
+                                style={styles.passwordInput} 
+                                value={password} 
+                                onChangeText={setPassword} 
+                                secureTextEntry={!isPasswordVisible} 
+                                autoCapitalize="none" 
+                                autoComplete="password" 
+                                placeholderTextColor={colors.textLight}
+                            />
                             <AnimatedButton style={styles.eyeIcon} onPress={() => setPasswordVisible(!isPasswordVisible)}>
                                 <Ionicons name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} size={24} color={colors.textLight} />
                             </AnimatedButton>
                         </View>
+                        
                         <AnimatedButton style={styles.button} onPress={handleLogin} disabled={isButtonLoading}>
-                            {isButtonLoading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
+                            {isButtonLoading ? 
+                                <ActivityIndicator color={colors.white} /> : 
+                                <Text style={styles.buttonText}>Entrar</Text>
+                            }
                         </AnimatedButton>
                     </Animated.View>
                 </View>
@@ -151,78 +143,38 @@ const LoginScreen = () => {
 };
 
 const getStyles = (colors) => StyleSheet.create({
-    mainContainer: {
-        flex: 1,
-        backgroundColor: colors.primary,
-    },
-    headerContainer: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 0, 
-    },
-    settingsButton: { 
-        position: 'absolute', 
-        top: 45, 
-        right: 20, 
-        padding: 10,
-    },
-    innerContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        pointerEvents: 'box-none',
-    },
+    mainContainer: { flex: 1, backgroundColor: colors.primary },
+    headerContainer: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
+    settingsButton: { position: 'absolute', top: 45, right: 20, padding: 10 },
+    innerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, pointerEvents: 'box-none' },
     loginContainer: { 
         backgroundColor: colors.cardBackground, 
         padding: 40, 
         borderRadius: 12, 
         width: '100%', 
-        // ALTERADO: Aumenta a largura máxima para telas maiores
-        maxWidth: 450,
-        pointerEvents: 'auto',
-        zIndex: 1, 
+        maxWidth: 450, 
+        pointerEvents: 'auto', 
+        zIndex: 1 
     },
-    logoContainer: { 
-        alignItems: 'center', 
-        marginBottom: 30,
-        borderRadius: 12, 
-        paddingLeft: 5, 
-        paddingRight: 5, 
-    },
-    logoIcon: { width: 80, height: 80, resizeMode: 'contain', marginBottom: 15, },
-    logoName: { width: 150, height: 40, resizeMode: 'contain', },
-    subtitle: { textAlign: 'center', marginBottom: 30, color: colors.textLight, },
-    label: { color: colors.textLight, marginBottom: 5, fontSize: SIZES.body, },
+    logoContainer: { alignItems: 'center', marginBottom: 30, borderRadius: 12, paddingHorizontal: 5 },
+    logoIcon: { width: 80, height: 80, resizeMode: 'contain', marginBottom: 15 },
+    logoName: { width: 150, height: 40, resizeMode: 'contain' },
+    subtitle: { textAlign: 'center', marginBottom: 30, color: colors.textLight },
+    label: { color: colors.textLight, marginBottom: 5, fontSize: SIZES.body },
     input: {
-        width: '100%', 
-        padding: 12, 
-        fontSize: 16, 
-        borderRadius: 5, 
-        borderWidth: 1, 
-        borderColor: colors.border, 
-        marginBottom: 20,
-        backgroundColor: colors.inputBackground,
-        color: colors.text,
+        width: '100%', padding: 12, fontSize: 16, borderRadius: 5, 
+        borderWidth: 1, borderColor: colors.border, marginBottom: 20, 
+        backgroundColor: colors.inputBackground, color: colors.text
     },
     passwordContainer: {
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        width: '100%', 
-        borderRadius: 5, 
-        borderWidth: 1, 
-        borderColor: colors.border, 
-        marginBottom: 20,
-        backgroundColor: colors.inputBackground,
+        flexDirection: 'row', alignItems: 'center', width: '100%', 
+        borderRadius: 5, borderWidth: 1, borderColor: colors.border, 
+        marginBottom: 20, backgroundColor: colors.inputBackground
     },
-    passwordInput: {
-        flex: 1, 
-        padding: 12, 
-        fontSize: 16,
-        color: colors.text,
-    },
-    eyeIcon: { padding: 10, },
-    button: { width: '100%', padding: 15, backgroundColor: colors.primary, borderRadius: 8, alignItems: 'center', marginTop: 15, },
-    buttonText: { color: colors.white, fontSize: 16, fontWeight: '500', },
+    passwordInput: { flex: 1, padding: 12, fontSize: 16, color: colors.text },
+    eyeIcon: { padding: 10 },
+    button: { width: '100%', padding: 15, backgroundColor: colors.primary, borderRadius: 8, alignItems: 'center', marginTop: 15 },
+    buttonText: { color: colors.white, fontSize: 16, fontWeight: '500' },
 });
 
 export default LoginScreen;
