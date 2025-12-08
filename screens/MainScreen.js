@@ -73,12 +73,33 @@ const MainScreen = ({ navigation }) => {
 
             if (route.params?.refresh) {
                 const { warehouseValue: refreshWh, filter: refreshFt } = route.params;
-                setWarehouseValue(refreshWh);
-                setFilter(refreshFt);
-                handleSearch(refreshWh, refreshFt);
+
+                // *** INÍCIO DA CORREÇÃO ***
+                // Lógica defensiva: Se os parâmetros de refresh não vierem,
+                // usamos os valores de estado atuais (que foram carregados do lastWarehouse).
+                // Isso evita que o armazém seja redefinido para 'undefined'
+                // se a tela anterior (ex: Details) não passar o 'warehouseValue' ao voltar.
+
+                const whToSearch = refreshWh !== undefined ? refreshWh : warehouseValue;
+                const ftToSearch = refreshFt !== undefined ? refreshFt : filter;
+
+                // Apenas atualiza o estado do armazém se um NOVO valor foi passado
+                if (refreshWh !== undefined) {
+                    setWarehouseValue(refreshWh);
+                }
+                
+                // Apenas atualiza o estado do filtro se um NOVO valor foi passado
+                if (refreshFt !== undefined) {
+                    setFilter(refreshFt);
+                }
+                
+                // Executa a busca com os valores corretos (os novos ou os que já estavam)
+                handleSearch(whToSearch, ftToSearch);
+                
                 navigation.setParams({ refresh: false });
+                // *** FIM DA CORREÇÃO ***
             }
-        }, [route.params?.refresh, colors])
+        }, [route.params?.refresh, colors, warehouseValue, filter]) // Adicionamos warehouseValue e filter às dependências
     );
     
     useEffect(() => {

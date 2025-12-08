@@ -125,6 +125,12 @@ export const AuthProvider = ({ children }) => {
             const warehousesMap = storedData ? JSON.parse(storedData) : {};
             warehousesMap[codusu] = warehouseCode;
             await AsyncStorage.setItem(LAST_WAREHOUSES_KEY, JSON.stringify(warehousesMap));
+            
+            // *** ESTA É A LINHA ADICIONADA ***
+            // Atualiza o estado no contexto para que o app saiba imediatamente
+            // qual foi o último armazém selecionado, sem precisar reiniciar.
+            setLastWarehouse(warehouseCode);
+
         } catch (e) {
             console.error("Falha ao salvar último armazém:", e);
         }
@@ -216,7 +222,6 @@ export const AuthProvider = ({ children }) => {
         lastWarehouse,
         saveLastWarehouse,
         lastUsername,
-        // NOVO: Exporta os novos estados e funções
         isReAuthVisible,
         handleReAuth,
         cancelReAuth,
