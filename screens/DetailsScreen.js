@@ -53,7 +53,7 @@ const DetailsScreen = () => {
                 // Backend retorna objeto JSON
                 const data = await api.fetchItemDetails(String(codArm), sequencia);
                 
-                // Mapeia para o estado da tela (INCLUINDO numDoc)
+                // Mapeia para o estado da tela
                 setDetails({ 
                     codarm: data.codArm, 
                     sequencia: data.seqEnd, 
@@ -68,7 +68,7 @@ const DetailsScreen = () => {
                     endpic: data.endPic, 
                     qtdCompleta: data.qtdCompleta, 
                     derivacao: data.derivacao,
-                    numDoc: data.numDoc // Campo Adicionado
+                    numDoc: data.numDoc
                 });
             } catch (err) {
                 handleApiError(err);
@@ -191,17 +191,20 @@ const DetailsScreen = () => {
 
     const renderActionButtons = () => {
         if (!details || !permissions) return null;
-        const showBaixa = (details.endpic === 'S') ? permissions.bxaPick : permissions.baixa;
-        const showPicking = permissions.pick && details.endpic !== 'S';
-        const hasAnyAction = showBaixa || permissions.transfer || showPicking || permissions.corre;
+
+        // CORREÇÃO: Utilizando as chaves em MAIÚSCULO conforme retorno da API
+        const showBaixa = (details.endpic === 'S') ? permissions.BXAPICK : permissions.BAIXA;
+        const showPicking = permissions.PICK && details.endpic !== 'S';
+        
+        const hasAnyAction = showBaixa || permissions.TRANSF || showPicking || permissions.CORRE;
         if (!hasAnyAction) return null;
 
         return (
             <View style={styles.actionsFooter}>
                 {showBaixa && <AnimatedButton style={[styles.actionButton, styles.btnBaixar]} onPress={() => setBaixaModalVisible(true)}><Text style={styles.actionButtonText}>Baixar</Text></AnimatedButton>}
-                {permissions.transfer && <AnimatedButton style={[styles.actionButton, styles.btnTransferir]} onPress={() => setTransferModalVisible(true)}><Text style={styles.actionButtonText}>Transferir</Text></AnimatedButton>}
+                {permissions.TRANSF && <AnimatedButton style={[styles.actionButton, styles.btnTransferir]} onPress={() => setTransferModalVisible(true)}><Text style={styles.actionButtonText}>Transferir</Text></AnimatedButton>}
                 {showPicking && <AnimatedButton style={[styles.actionButton, styles.btnPicking]} onPress={() => setPickingModalVisible(true)}><Text style={styles.actionButtonText}>Picking</Text></AnimatedButton>}
-                {permissions.corre && <AnimatedButton style={[styles.actionButton, styles.btnCorrecao]} onPress={() => setCorrecaoModalVisible(true)}><Text style={styles.actionButtonText}>Correção</Text></AnimatedButton>}
+                {permissions.CORRE && <AnimatedButton style={[styles.actionButton, styles.btnCorrecao]} onPress={() => setCorrecaoModalVisible(true)}><Text style={styles.actionButtonText}>Correção</Text></AnimatedButton>}
             </View>
         );
     };
