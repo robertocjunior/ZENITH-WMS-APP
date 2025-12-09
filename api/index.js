@@ -9,6 +9,7 @@ const DEFAULT_API_URL = 'https://zenith.nicocereais.com.br:3080';
 const SESSION_TOKEN_KEY = 'sessionToken';
 const SNK_SESSION_ID_KEY = 'snkjsessionid';
 
+// Obtém versão do app.json
 const APP_VERSION = Constants.expoConfig?.version || '0.0.0';
 
 let API_BASE_URL = '';
@@ -47,6 +48,7 @@ async function authenticatedFetch(endpoint, body = {}) {
         'X-App-Version': APP_VERSION 
     };
 
+    // O Authorization deve ser enviado SEMPRE
     headers['Authorization'] = `Bearer ${sessionToken}`;
 
     const transactionType = body.type;
@@ -60,9 +62,11 @@ async function authenticatedFetch(endpoint, body = {}) {
             authError.reauthRequired = true;
             throw authError;
         }
+        // Envia o header específico que o backend Go espera
         headers['Snkjsessionid'] = snkjsessionid; 
     }
 
+    // Timeout de 15s
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -116,7 +120,7 @@ export async function login(username, password) {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); 
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s para login
 
     try {
         const response = await fetch(`${API_BASE_URL}/apiv1/login`, {
@@ -173,26 +177,41 @@ export async function login(username, password) {
 
 export async function logout() {
     try {
+        // 1. Recupera o token ANTES de limpar o storage para poder enviar ao backend
+        const sessionToken = await AsyncStorage.getItem(SESSION_TOKEN_KEY);
+
+        // 2. Limpeza Local (Prioridade)
         await AsyncStorage.multiRemove([SESSION_TOKEN_KEY, SNK_SESSION_ID_KEY, 'userSession']);
         console.log('Dados locais limpos.');
 
-        try {
-             const controller = new AbortController();
-             setTimeout(() => controller.abort(), 3000); 
+        // 3. Notifica Backend (Best effort)
+        if (sessionToken) {
+            try {
+                 const controller = new AbortController();
+                 setTimeout(() => controller.abort(), 3000); 
 
-             await fetch(`${API_BASE_URL}/apiv1/logout`, {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json', 'X-App-Version': APP_VERSION },
-                 body: JSON.stringify({}),
-                 signal: controller.signal
-             });
-        } catch (e) { /* Ignora erro de rede no logout */ }
+                 await fetch(`${API_BASE_URL}/apiv1/logout`, {
+                     method: 'POST',
+                     headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-App-Version': APP_VERSION,
+                        'Authorization': `Bearer ${sessionToken}` // CORREÇÃO: Envia o token para o backend invalidar
+                     },
+                     body: JSON.stringify({}),
+                     signal: controller.signal
+                 });
+                 console.log('Backend notificado do logout.');
+            } catch (e) { 
+                console.warn("Não foi possível notificar o backend sobre o logout:", e.message); 
+            }
+        }
 
     } catch (e) {
         console.error("Erro crítico no logout local:", e);
     }
 }
 
+// Rotas
 export const fetchPermissions = () => authenticatedFetch('/permissions');
 
 export const searchItems = (codArm, filtro) => {
@@ -213,7 +232,6 @@ export const fetchItemDetails = (codArm, sequencia) => {
     return authenticatedFetch('/get-item-details', payload);
 }
 
-// CORREÇÃO: fetchHistory agora aceita filtros
 export const fetchHistory = (filters) => authenticatedFetch('/get-history', filters);
 
 export const fetchPickingLocations = (codarm, codprod, sequencia) => {

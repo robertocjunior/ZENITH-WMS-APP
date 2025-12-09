@@ -10,13 +10,10 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
     const styles = getStyles(colors);
     const [quantity, setQuantity] = useState('');
     
-    // Configuração da Animação do Teclado
     const keyboardOffset = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        const handleKeyboardShow = (event) => {
-            // Sobe o modal. O valor negativo move para cima.
-            // Ajuste -100 conforme necessário para telas menores
+        const handleKeyboardShow = () => {
             Animated.timing(keyboardOffset, {
                 toValue: -100, 
                 duration: 250,
@@ -42,9 +39,12 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
     const isKgProduct = itemDetails?.qtdCompleta?.toUpperCase().includes('KG');
     const keyboardType = isKgProduct ? 'numeric' : 'number-pad';
 
+    // CORREÇÃO: Preenche com a quantidade máxima ao abrir
     useEffect(() => {
-        if (visible) setQuantity('');
-    }, [visible]);
+        if (visible && itemDetails) {
+            setQuantity(itemDetails.quantidade !== undefined ? String(itemDetails.quantidade) : '');
+        }
+    }, [visible, itemDetails]);
 
     const handleConfirm = () => {
         if (!isKgProduct && (quantity.includes(',') || quantity.includes('.'))) {
@@ -53,10 +53,19 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
         }
         
         const numQuantity = parseFloat(quantity.replace(',', '.'));
+        const maxQuantity = itemDetails?.quantidade || 0;
+
         if (isNaN(numQuantity) || numQuantity <= 0) {
             if(onValidationError) onValidationError('Por favor, insira uma quantidade válida.');
             return;
         }
+
+        // CORREÇÃO: Bloqueia quantidade maior que o disponível
+        if (numQuantity > maxQuantity) {
+            if(onValidationError) onValidationError(`Quantidade excede o disponível (${maxQuantity}).`);
+            return;
+        }
+
         onConfirm(numQuantity);
     };
 
@@ -71,11 +80,10 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
             statusBarTranslucent={true}
         >
             <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
-                {/* Transformamos a View container em Animated.View */}
                 <Animated.View style={[styles.modalContent, { transform: [{ translateY: keyboardOffset }] }]}>
                     <Text style={styles.title}>Baixa de Estoque</Text>
                     <Text style={styles.infoText}>
-                        Quantidade Atual: <Text style={{ fontWeight: 'bold' }}>{itemDetails.qtdCompleta}</Text>
+                        Disponível: <Text style={{ fontWeight: 'bold' }}>{itemDetails.qtdCompleta}</Text>
                     </Text>
 
                     <Text style={styles.label}>Quantidade a baixar:</Text>
@@ -86,7 +94,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
                         placeholder="0"
                         placeholderTextColor={colors.textLight}
                         keyboardType={keyboardType}
-                        autoFocus={false} // Evita pular o teclado instantaneamente ao abrir
+                        autoFocus={false} 
                     />
 
                     <View style={styles.buttonRow}>
@@ -117,7 +125,6 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.cardBackground,
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
-        // Importante para a sombra não cortar na animação
         elevation: 5,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
@@ -142,7 +149,7 @@ const getStyles = (colors) => StyleSheet.create({
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius },
     cancelButton: { backgroundColor: colors.buttonSecondaryBackground },
     cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500' },
-    confirmButton: { backgroundColor: colors.success }, // Cor verde para baixa
+    confirmButton: { backgroundColor: colors.success }, 
     confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500' },
 });
 

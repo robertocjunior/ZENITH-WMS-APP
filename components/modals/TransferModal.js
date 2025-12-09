@@ -23,7 +23,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
     useEffect(() => {
         const handleKeyboardShow = () => {
             Animated.timing(keyboardOffset, {
-                toValue: -120, // Sobe um pouco mais pois esse modal é maior
+                toValue: -120, 
                 duration: 250,
                 useNativeDriver: true,
             }).start();
@@ -46,9 +46,10 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
     const isKgProduct = itemDetails?.qtdCompleta?.toUpperCase().includes('KG');
     const keyboardType = isKgProduct ? 'numeric' : 'number-pad';
 
+    // CORREÇÃO: Auto-preenchimento
     useEffect(() => {
         if (visible) {
-            setQuantity(String(itemDetails?.quantidade || ''));
+            setQuantity(itemDetails?.quantidade !== undefined ? String(itemDetails.quantidade) : '');
             setDestinationAddress('');
             setMarkedAsPicking(false);
             setWarehouseValue(null);
@@ -70,11 +71,20 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
         const numQuantity = isKgProduct
             ? parseFloat(String(quantity).replace(',', '.'))
             : parseInt(String(quantity), 10);
+        
+        const maxQuantity = itemDetails?.quantidade || 0;
             
         if (isNaN(numQuantity) || numQuantity <= 0) {
             onValidationError('Por favor, insira uma quantidade válida.');
             return;
         }
+
+        // CORREÇÃO: Validação de Máximo
+        if (numQuantity > maxQuantity) {
+            onValidationError(`Quantidade excede o disponível (${maxQuantity}).`);
+            return;
+        }
+
         if (!warehouseValue) {
             onValidationError('Por favor, selecione um armazém de destino.');
             return;
@@ -196,7 +206,7 @@ const getStyles = (colors) => StyleSheet.create({
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
     cancelButton: { backgroundColor: colors.buttonSecondaryBackground },
     cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500', },
-    confirmButton: { backgroundColor: colors.info }, // Azul para Transferência
+    confirmButton: { backgroundColor: colors.info }, 
     confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500', },
 });
 

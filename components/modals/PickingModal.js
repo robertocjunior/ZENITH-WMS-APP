@@ -45,6 +45,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
     const isKgProduct = itemDetails?.qtdCompleta?.toUpperCase().includes('KG');
     const keyboardType = isKgProduct ? 'numeric' : 'number-pad';
 
+    // ... (fetchLocations useEffect mantido igual ao anterior) ...
     useEffect(() => {
         const fetchLocations = async () => {
             if (visible && itemDetails) {
@@ -58,15 +59,12 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
                 try {
                     const { codarm, codprod, sequencia } = itemDetails;
                     const locationsMap = await api.fetchPickingLocations(Number(codarm), Number(codprod), Number(sequencia));
-                    
                     const locationsArray = locationsMap ? Object.values(locationsMap) : [];
-
                     const formattedLocations = locationsArray.map((loc) => ({
                         label: `${loc.seqEnd} - ${loc.descrProd}`,
                         value: loc.seqEnd
                     }));
                     setDestinationItems(formattedLocations);
-
                 } catch (error) {
                     console.error("Erro picking:", error);
                     if(onValidationError) onValidationError("Erro ao carregar destinos.");
@@ -75,13 +73,13 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
                 }
             }
         };
-
         fetchLocations();
     }, [visible, itemDetails, preloadedLocations]);
 
+    // CORREÇÃO: Auto-preenchimento
     useEffect(() => {
         if (visible && itemDetails) {
-            setQuantity(String(itemDetails.quantidade || ''));
+            setQuantity(itemDetails?.quantidade !== undefined ? String(itemDetails.quantidade) : '');
             setDestinationValue(null);
         }
     }, [visible, itemDetails]);
@@ -95,11 +93,20 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
         const numQuantity = isKgProduct
             ? parseFloat(String(quantity).replace(',', '.'))
             : parseInt(String(quantity), 10);
+        
+        const maxQuantity = itemDetails?.quantidade || 0;
 
         if (isNaN(numQuantity) || numQuantity <= 0) {
             onValidationError('Quantidade inválida.');
             return;
         }
+
+        // CORREÇÃO: Validação de Máximo
+        if (numQuantity > maxQuantity) {
+            onValidationError(`Quantidade excede o disponível (${maxQuantity}).`);
+            return;
+        }
+
         if (!destinationValue) {
             onValidationError('Selecione um destino de picking.');
             return;
@@ -205,7 +212,7 @@ const getStyles = (colors) => StyleSheet.create({
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
     cancelButton: { backgroundColor: colors.buttonSecondaryBackground },
     cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500', },
-    confirmButton: { backgroundColor: colors.orange }, // Laranja para Picking
+    confirmButton: { backgroundColor: colors.orange }, 
     confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500', },
 });
 

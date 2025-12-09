@@ -35,11 +35,12 @@ const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails, onValidationE
         }
     }, [visible]);
 
+    // CORREÇÃO: Preenche com a quantidade atual
     useEffect(() => {
-        if (visible) {
-            setNewQuantity('');
+        if (visible && itemDetails) {
+            setNewQuantity(itemDetails?.quantidade !== undefined ? String(itemDetails.quantidade) : '');
         }
-    }, [visible]);
+    }, [visible, itemDetails]);
 
     const handleConfirm = () => {
         const numQuantity = parseFloat(newQuantity.replace(',', '.'));
@@ -129,7 +130,7 @@ const getStyles = (colors) => StyleSheet.create({
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius },
     cancelButton: { backgroundColor: colors.buttonSecondaryBackground },
     cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500' },
-    confirmButton: { backgroundColor: colors.warning }, // Amarelo para Correção
+    confirmButton: { backgroundColor: colors.warning }, 
     confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500' },
 });
 
