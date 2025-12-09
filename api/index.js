@@ -48,9 +48,12 @@ async function authenticatedFetch(endpoint, body = {}) {
         'X-App-Version': APP_VERSION 
     };
 
+    // CORREÇÃO: O Authorization deve ser enviado SEMPRE
+    headers['Authorization'] = `Bearer ${sessionToken}`;
+
     const transactionType = body.type;
     const requiresSessionId = endpoint === '/execute-transaction' &&
-                              ['baixa', 'transferencia', 'picking'].includes(transactionType);
+                              ['baixa', 'transferencia', 'picking', 'correcao'].includes(transactionType);
 
     if (requiresSessionId) {
         const snkjsessionid = await AsyncStorage.getItem(SNK_SESSION_ID_KEY);
@@ -59,11 +62,8 @@ async function authenticatedFetch(endpoint, body = {}) {
             authError.reauthRequired = true;
             throw authError;
         }
-        // Envia tanto no Cookie quanto no Header para garantir compatibilidade
-        headers['Cookie'] = `sessionToken=${sessionToken}; snkjsessionid=${snkjsessionid}`;
+        // Envia o header específico que o backend Go espera
         headers['Snkjsessionid'] = snkjsessionid; 
-    } else {
-        headers['Authorization'] = `Bearer ${sessionToken}`;
     }
 
     // Timeout de 15s
@@ -71,7 +71,6 @@ async function authenticatedFetch(endpoint, body = {}) {
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-        // TODAS as rotas autenticadas usam /apiv1
         const response = await fetch(`${API_BASE_URL}/apiv1${endpoint}`, {
             method: 'POST',
             headers: headers,
@@ -198,10 +197,9 @@ export async function logout() {
     }
 }
 
-// Rotas auxiliares
+// Rotas
 export const fetchPermissions = () => authenticatedFetch('/permissions');
 
-// CORREÇÃO: Garante envio de INT para o backend Go
 export const searchItems = (codArm, filtro) => {
     const codArmInt = parseInt(codArm, 10);
     const payload = { 
@@ -231,4 +229,4 @@ export const fetchPickingLocations = (codarm, codprod, sequencia) => {
     return authenticatedFetch('/get-picking-locations', payload);
 }
 
-export const executeTransaction = (type, payload) => authenticatedFetch('/execute-transaction', { type, payload }); 
+export const executeTransaction = (type, payload) => authenticatedFetch('/execute-transaction', { type, payload });

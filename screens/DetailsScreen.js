@@ -50,10 +50,8 @@ const DetailsScreen = () => {
             if (!codArm || !sequencia) return;
             setLoading(true);
             try {
-                // Backend retorna objeto JSON
                 const data = await api.fetchItemDetails(String(codArm), sequencia);
                 
-                // Mapeia para o estado da tela
                 setDetails({ 
                     codarm: data.codArm, 
                     sequencia: data.seqEnd, 
@@ -94,12 +92,24 @@ const DetailsScreen = () => {
         navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
     }
 
+    // --- CORREÇÃO: Função handleConfirmBaixa atualizada ---
     const handleConfirmBaixa = async (quantity) => {
         setBaixaModalVisible(false);
         setLoading(true);
 
         const doRequest = async () => {
-            const payload = { codarm: details.codarm, sequencia: details.sequencia, quantidade: quantity };
+            // Garante que a quantidade seja um número
+            const qtdNumber = Number(quantity.toString().replace(',', '.'));
+
+            // Monta o payload na estrutura aninhada correta para o Backend
+            const payload = { 
+                origem: {
+                    codarm: details.codarm,
+                    sequencia: details.sequencia
+                },
+                quantidade: qtdNumber 
+            };
+
             const result = await api.executeTransaction('baixa', payload);
             setSuccess(result.message || "Baixa realizada com sucesso!");
         };
@@ -118,12 +128,18 @@ const DetailsScreen = () => {
         setLoading(true);
         
         const doRequest = async () => {
+            const qtdNumber = Number(transferData.quantity.toString().replace(',', '.'));
+            
             const payload = {
-                origem: details,
+                // Passa apenas os dados necessários da origem
+                origem: {
+                    codarm: details.codarm,
+                    sequencia: details.sequencia
+                },
                 destino: {
-                    armazemDestino: transferData.destinationWarehouse,
+                    armazemDestino: parseInt(transferData.destinationWarehouse, 10),
                     enderecoDestino: transferData.destinationAddress,
-                    quantidade: transferData.quantity,
+                    quantidade: qtdNumber,
                     criarPick: transferData.isMarkedAsPicking
                 }
             };
@@ -145,12 +161,17 @@ const DetailsScreen = () => {
         setLoading(true);
 
         const doRequest = async () => {
+            const qtdNumber = Number(pickingData.quantity.toString().replace(',', '.'));
+
             const payload = {
-                origem: details,
+                origem: {
+                    codarm: details.codarm,
+                    sequencia: details.sequencia
+                },
                 destino: {
                     armazemDestino: details.codarm,
                     enderecoDestino: pickingData.destinationSequence,
-                    quantidade: pickingData.quantity
+                    quantidade: qtdNumber
                 }
             };
             const result = await api.executeTransaction('picking', payload);
@@ -171,10 +192,12 @@ const DetailsScreen = () => {
         setLoading(true);
         
         const doRequest = async () => {
+            const qtdNumber = Number(newQuantity.toString().replace(',', '.'));
+
             const payload = {
                 codarm: details.codarm,
                 sequencia: details.sequencia,
-                newQuantity: newQuantity
+                newQuantity: qtdNumber
             };
             const result = await api.executeTransaction('correcao', payload);
             setSuccess(result.message || "Quantidade corrigida com sucesso!");
@@ -192,7 +215,6 @@ const DetailsScreen = () => {
     const renderActionButtons = () => {
         if (!details || !permissions) return null;
 
-        // CORREÇÃO: Utilizando as chaves em MAIÚSCULO conforme retorno da API
         const showBaixa = (details.endpic === 'S') ? permissions.BXAPICK : permissions.BAIXA;
         const showPicking = permissions.PICK && details.endpic !== 'S';
         
