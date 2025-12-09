@@ -1,6 +1,6 @@
 // components/modals/PickingModal.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable, Animated, Platform } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SIZES } from '../../constants/theme';
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -17,13 +17,37 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
     const [destinationItems, setDestinationItems] = useState([]);
     const [isLoadingLocations, setIsLoadingLocations] = useState(false);
 
+    const keyboardOffset = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const handleKeyboardShow = () => {
+            Animated.timing(keyboardOffset, {
+                toValue: -100,
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        };
+        const handleKeyboardHide = () => {
+            Animated.timing(keyboardOffset, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        };
+
+        if (visible) {
+            const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', handleKeyboardShow);
+            const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', handleKeyboardHide);
+            return () => { showSub.remove(); hideSub.remove(); };
+        }
+    }, [visible]);
+
     const isKgProduct = itemDetails?.qtdCompleta?.toUpperCase().includes('KG');
     const keyboardType = isKgProduct ? 'numeric' : 'number-pad';
 
     useEffect(() => {
         const fetchLocations = async () => {
             if (visible && itemDetails) {
-                // OTIMIZAÇÃO: Usa dados pré-carregados se disponíveis
                 if (preloadedLocations && preloadedLocations.length > 0) {
                     setDestinationItems(preloadedLocations);
                     return;
@@ -44,8 +68,8 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
                     setDestinationItems(formattedLocations);
 
                 } catch (error) {
-                    console.error("Erro ao buscar locais de picking:", error);
-                    if(onValidationError) onValidationError("Não foi possível carregar os destinos de picking.");
+                    console.error("Erro picking:", error);
+                    if(onValidationError) onValidationError("Erro ao carregar destinos.");
                 } finally {
                     setIsLoadingLocations(false);
                 }
@@ -64,7 +88,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
 
     const handleConfirm = () => {
         if (!isKgProduct && (String(quantity).includes(',') || String(quantity).includes('.'))) {
-            onValidationError('Este produto não aceita casas decimais. Por favor, insira um número inteiro.');
+            onValidationError('Este produto não aceita casas decimais.');
             return;
         }
 
@@ -73,11 +97,11 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
             : parseInt(String(quantity), 10);
 
         if (isNaN(numQuantity) || numQuantity <= 0) {
-            onValidationError('Por favor, insira uma quantidade válida.');
+            onValidationError('Quantidade inválida.');
             return;
         }
         if (!destinationValue) {
-            onValidationError('Por favor, selecione um destino de picking.');
+            onValidationError('Selecione um destino de picking.');
             return;
         }
         
@@ -98,7 +122,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
             statusBarTranslucent={true}
         >
             <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
-                <View style={styles.modalContent}>
+                <Animated.View style={[styles.modalContent, { transform: [{ translateY: keyboardOffset }] }]}>
                     <Text style={styles.title}>Mover para Picking</Text>
                     <Text style={styles.infoText}>
                         Disponível: <Text style={{ fontWeight: 'bold' }}>{itemDetails.qtdCompleta}</Text>
@@ -136,7 +160,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
                             <Text style={styles.confirmButtonText}>Confirmar</Text>
                         </AnimatedButton>
                     </View>
-                </View>
+                </Animated.View>
             </Pressable>
         </Modal>
     );
@@ -179,11 +203,9 @@ const getStyles = (colors) => StyleSheet.create({
     dropdownList: { borderColor: colors.border },
     buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
     button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius, },
-    cancelButton: {
-        backgroundColor: colors.buttonSecondaryBackground, 
-    },
+    cancelButton: { backgroundColor: colors.buttonSecondaryBackground },
     cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500', },
-    confirmButton: { backgroundColor: colors.primary, },
+    confirmButton: { backgroundColor: colors.orange }, // Laranja para Picking
     confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500', },
 });
 

@@ -1,39 +1,60 @@
 // components/modals/BaixaModal.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable, Animated, Platform } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SIZES } from '../../constants/theme';
 import AnimatedButton from '../common/AnimatedButton';
 
-// ALTERADO: Adiciona a nova prop onValidationError
 const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationError }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const [quantity, setQuantity] = useState('');
+    
+    // Configuração da Animação do Teclado
+    const keyboardOffset = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const handleKeyboardShow = (event) => {
+            // Sobe o modal. O valor negativo move para cima.
+            // Ajuste -100 conforme necessário para telas menores
+            Animated.timing(keyboardOffset, {
+                toValue: -100, 
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        };
+
+        const handleKeyboardHide = () => {
+            Animated.timing(keyboardOffset, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        };
+
+        if (visible) {
+            const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', handleKeyboardShow);
+            const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', handleKeyboardHide);
+            return () => { showSub.remove(); hideSub.remove(); };
+        }
+    }, [visible]);
 
     const isKgProduct = itemDetails?.qtdCompleta?.toUpperCase().includes('KG');
     const keyboardType = isKgProduct ? 'numeric' : 'number-pad';
 
     useEffect(() => {
-        if (visible && itemDetails) {
-            setQuantity(String(itemDetails.quantidade || ''));
-        }
-    }, [visible, itemDetails]);
+        if (visible) setQuantity('');
+    }, [visible]);
 
     const handleConfirm = () => {
-        if (!isKgProduct && (String(quantity).includes(',') || String(quantity).includes('.'))) {
-            // ALTERADO: Usa a nova função de erro em vez do alert
-            onValidationError('Este produto não aceita casas decimais. Por favor, insira um número inteiro.');
+        if (!isKgProduct && (quantity.includes(',') || quantity.includes('.'))) {
+            if(onValidationError) onValidationError('Este produto não aceita casas decimais.');
             return;
         }
-
-        const numQuantity = isKgProduct
-            ? parseFloat(String(quantity).replace(',', '.'))
-            : parseInt(String(quantity), 10);
-            
+        
+        const numQuantity = parseFloat(quantity.replace(',', '.'));
         if (isNaN(numQuantity) || numQuantity <= 0) {
-            // ALTERADO: Usa a nova função de erro em vez do alert
-            onValidationError('Por favor, insira uma quantidade válida.');
+            if(onValidationError) onValidationError('Por favor, insira uma quantidade válida.');
             return;
         }
         onConfirm(numQuantity);
@@ -50,10 +71,11 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
             statusBarTranslucent={true}
         >
             <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
-                <View style={styles.modalContent}>
-                    <Text style={styles.title}>Dar Baixa no Produto</Text>
+                {/* Transformamos a View container em Animated.View */}
+                <Animated.View style={[styles.modalContent, { transform: [{ translateY: keyboardOffset }] }]}>
+                    <Text style={styles.title}>Baixa de Estoque</Text>
                     <Text style={styles.infoText}>
-                        Disponível: <Text style={{ fontWeight: 'bold' }}>{itemDetails.qtdCompleta}</Text>
+                        Quantidade Atual: <Text style={{ fontWeight: 'bold' }}>{itemDetails.qtdCompleta}</Text>
                     </Text>
 
                     <Text style={styles.label}>Quantidade a baixar:</Text>
@@ -61,10 +83,10 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
                         style={styles.input}
                         value={quantity}
                         onChangeText={setQuantity}
-                        keyboardType={keyboardType}
-                        placeholder="Digite a quantidade"
+                        placeholder="0"
                         placeholderTextColor={colors.textLight}
-                        autoFocus={true}
+                        keyboardType={keyboardType}
+                        autoFocus={false} // Evita pular o teclado instantaneamente ao abrir
                     />
 
                     <View style={styles.buttonRow}>
@@ -75,13 +97,12 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
                             <Text style={styles.confirmButtonText}>Confirmar</Text>
                         </AnimatedButton>
                     </View>
-                </View>
+                </Animated.View>
             </Pressable>
         </Modal>
     );
 };
 
-// ... (o restante do arquivo getStyles permanece o mesmo)
 const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,
@@ -96,23 +117,16 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.cardBackground,
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
+        // Importante para a sombra não cortar na animação
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: colors.text,
-        marginBottom: 10,
-    },
-    infoText: {
-        fontSize: 16,
-        color: colors.textLight,
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        color: colors.textLight,
-        marginBottom: 5,
-    },
+    title: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 10 },
+    infoText: { fontSize: 16, color: colors.textLight, marginBottom: 20 },
+    label: { fontSize: 14, color: colors.textLight, marginBottom: 5 },
     input: {
         width: '100%',
         padding: 12,
@@ -124,32 +138,12 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.inputBackground,
         color: colors.text,
     },
-    buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 10,
-    },
-    button: {
-        paddingVertical: 12,
-        paddingHorizontal: 25,
-        borderRadius: SIZES.radius,
-    },
-    cancelButton: {
-        backgroundColor: colors.buttonSecondaryBackground,
-    },
-    cancelButtonText: {
-        color: colors.text,
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    confirmButton: {
-        backgroundColor: colors.primary,
-    },
-    confirmButtonText: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: '500',
-    },
+    buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+    button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius },
+    cancelButton: { backgroundColor: colors.buttonSecondaryBackground },
+    cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500' },
+    confirmButton: { backgroundColor: colors.success }, // Cor verde para baixa
+    confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500' },
 });
 
 export default BaixaModal;

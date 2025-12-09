@@ -1,15 +1,39 @@
 // components/modals/CorrecaoModal.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Modal, StyleSheet, TextInput, Keyboard, Pressable, Animated, Platform } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SIZES } from '../../constants/theme';
 import AnimatedButton from '../common/AnimatedButton';
 
-// ADICIONADO: onValidationError
 const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails, onValidationError }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const [newQuantity, setNewQuantity] = useState('');
+
+    const keyboardOffset = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const handleKeyboardShow = () => {
+            Animated.timing(keyboardOffset, {
+                toValue: -100,
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        };
+        const handleKeyboardHide = () => {
+            Animated.timing(keyboardOffset, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        };
+
+        if (visible) {
+            const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', handleKeyboardShow);
+            const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', handleKeyboardHide);
+            return () => { showSub.remove(); hideSub.remove(); };
+        }
+    }, [visible]);
 
     useEffect(() => {
         if (visible) {
@@ -20,7 +44,6 @@ const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails, onValidationE
     const handleConfirm = () => {
         const numQuantity = parseFloat(newQuantity.replace(',', '.'));
         if (isNaN(numQuantity) || numQuantity < 0) {
-            // CORREÇÃO: Usa modal de erro
             if(onValidationError) {
                 onValidationError('Por favor, insira uma nova quantidade válida.');
             } else {
@@ -42,7 +65,7 @@ const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails, onValidationE
             statusBarTranslucent={true}
         >
             <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
-                <View style={styles.modalContent}>
+                <Animated.View style={[styles.modalContent, { transform: [{ translateY: keyboardOffset }] }]}>
                     <Text style={styles.title}>Corrigir Quantidade</Text>
                     <Text style={styles.infoText}>
                         Quantidade Atual: <Text style={{ fontWeight: 'bold' }}>{itemDetails.qtdCompleta}</Text>
@@ -56,7 +79,7 @@ const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails, onValidationE
                         placeholder="0"
                         placeholderTextColor={colors.textLight}
                         keyboardType="numeric"
-                        autoFocus={true}
+                        autoFocus={false}
                     />
 
                     <View style={styles.buttonRow}>
@@ -67,7 +90,7 @@ const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails, onValidationE
                             <Text style={styles.confirmButtonText}>Confirmar</Text>
                         </AnimatedButton>
                     </View>
-                </View>
+                </Animated.View>
             </Pressable>
         </Modal>
     );
@@ -88,22 +111,9 @@ const getStyles = (colors) => StyleSheet.create({
         borderRadius: SIZES.radius,
         padding: SIZES.padding * 1.5,
     },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: colors.text,
-        marginBottom: 10,
-    },
-    infoText: {
-        fontSize: 16,
-        color: colors.textLight,
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        color: colors.textLight,
-        marginBottom: 5,
-    },
+    title: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 10, },
+    infoText: { fontSize: 16, color: colors.textLight, marginBottom: 20, },
+    label: { fontSize: 14, color: colors.textLight, marginBottom: 5, },
     input: {
         width: '100%',
         padding: 12,
@@ -115,32 +125,12 @@ const getStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.inputBackground,
         color: colors.text,
     },
-    buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 10,
-    },
-    button: {
-        paddingVertical: 12,
-        paddingHorizontal: 25,
-        borderRadius: SIZES.radius,
-    },
-    cancelButton: {
-        backgroundColor: colors.buttonSecondaryBackground,
-    },
-    cancelButtonText: {
-        color: colors.text,
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    confirmButton: {
-        backgroundColor: colors.primary,
-    },
-    confirmButtonText: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: '500',
-    },
+    buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+    button: { paddingVertical: 12, paddingHorizontal: 25, borderRadius: SIZES.radius },
+    cancelButton: { backgroundColor: colors.buttonSecondaryBackground },
+    cancelButtonText: { color: colors.text, fontSize: 16, fontWeight: '500' },
+    confirmButton: { backgroundColor: colors.warning }, // Amarelo para Correção
+    confirmButtonText: { color: colors.white, fontSize: 16, fontWeight: '500' },
 });
 
 export default CorrecaoModal;
