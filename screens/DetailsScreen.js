@@ -30,6 +30,8 @@ const DetailsScreen = () => {
 
     const [loading, setLoading] = useState(true);
     const [details, setDetails] = useState(null);
+    const [pickingLocations, setPickingLocations] = useState(null); // NOVO: Estado para locais pré-carregados
+
     const [isBaixaModalVisible, setBaixaModalVisible] = useState(false);
     const [isTransferModalVisible, setTransferModalVisible] = useState(false);
     const [isPickingModalVisible, setPickingModalVisible] = useState(false);
@@ -50,6 +52,7 @@ const DetailsScreen = () => {
             if (!codArm || !sequencia) return;
             setLoading(true);
             try {
+                // 1. Busca detalhes do item
                 const data = await api.fetchItemDetails(String(codArm), sequencia);
                 
                 setDetails({ 
@@ -68,6 +71,20 @@ const DetailsScreen = () => {
                     derivacao: data.derivacao,
                     numDoc: data.numDoc
                 });
+
+                // 2. NOVO: Pré-carrega locais de picking em background (sem await para não travar UI)
+                // Isso garante que quando o usuário clicar no botão, a lista já estará pronta (ou quase)
+                api.fetchPickingLocations(Number(data.codArm), Number(data.codProd), Number(data.seqEnd))
+                    .then(locationsMap => {
+                        const locationsArray = locationsMap ? Object.values(locationsMap) : [];
+                        const formatted = locationsArray.map(loc => ({
+                            label: `${loc.seqEnd} - ${loc.descrProd}`,
+                            value: loc.seqEnd
+                        }));
+                        setPickingLocations(formatted);
+                    })
+                    .catch(e => console.log("Info: Nenhum local de picking pré-carregado ou erro silencioso", e));
+
             } catch (err) {
                 handleApiError(err);
                 setError("Não foi possível carregar os dados do item.");
@@ -98,62 +115,41 @@ const DetailsScreen = () => {
 
         const doRequest = async () => {
             const qtdNumber = Number(quantity.toString().replace(',', '.'));
-
             const payload = { 
-                origem: {
-                    codarm: details.codarm,
-                    sequencia: details.sequencia
-                },
+                origem: { codarm: details.codarm, sequencia: details.sequencia },
                 quantidade: qtdNumber 
             };
-
             const result = await api.executeTransaction('baixa', payload);
             setSuccess(result.message || "Baixa realizada com sucesso!");
         };
 
-        try {
-            await doRequest();
-        } catch (error) {
-            handleApiError(error, doRequest);
-        } finally {
-            setLoading(false);
-        }
+        try { await doRequest(); } 
+        catch (error) { handleApiError(error, doRequest); } 
+        finally { setLoading(false); }
     };
 
-    // --- CORREÇÃO: Função handleConfirmTransfer atualizada ---
     const handleConfirmTransfer = async (transferData) => {
         setTransferModalVisible(false);
         setLoading(true);
         
         const doRequest = async () => {
-            // Converte quantidade
             const qtdNumber = Number(transferData.quantity.toString().replace(',', '.'));
-            
-            // Monta o payload conforme solicitado (origem enxuta + destino estruturado)
             const payload = {
-                origem: {
-                    codarm: details.codarm,
-                    sequencia: details.sequencia
-                },
+                origem: { codarm: details.codarm, sequencia: details.sequencia },
                 destino: {
-                    armazemDestino: parseInt(transferData.destinationWarehouse, 10), // Garante Int
-                    enderecoDestino: transferData.destinationAddress, // String
-                    quantidade: qtdNumber, // Float
-                    criarPick: !!transferData.isMarkedAsPicking // Boolean
+                    armazemDestino: parseInt(transferData.destinationWarehouse, 10),
+                    enderecoDestino: transferData.destinationAddress,
+                    quantidade: qtdNumber,
+                    criarPick: transferData.isMarkedAsPicking
                 }
             };
-            
             const result = await api.executeTransaction('transferencia', payload);
             setSuccess(result.message || "Transferência realizada com sucesso!");
         };
 
-        try {
-            await doRequest();
-        } catch (error) {
-            handleApiError(error, doRequest);
-        } finally {
-            setLoading(false);
-        }
+        try { await doRequest(); } 
+        catch (error) { handleApiError(error, doRequest); } 
+        finally { setLoading(false); }
     };
     
     const handleConfirmPicking = async (pickingData) => {
@@ -162,12 +158,8 @@ const DetailsScreen = () => {
 
         const doRequest = async () => {
             const qtdNumber = Number(pickingData.quantity.toString().replace(',', '.'));
-
             const payload = {
-                origem: {
-                    codarm: details.codarm,
-                    sequencia: details.sequencia
-                },
+                origem: { codarm: details.codarm, sequencia: details.sequencia },
                 destino: {
                     armazemDestino: details.codarm,
                     enderecoDestino: pickingData.destinationSequence,
@@ -178,13 +170,9 @@ const DetailsScreen = () => {
             setSuccess(result.message || "Movido para picking com sucesso!");
         };
 
-        try {
-            await doRequest();
-        } catch (error) {
-            handleApiError(error, doRequest);
-        } finally {
-            setLoading(false);
-        }
+        try { await doRequest(); } 
+        catch (error) { handleApiError(error, doRequest); } 
+        finally { setLoading(false); }
     };
     
     const handleConfirmCorrecao = async (newQuantity) => {
@@ -193,7 +181,6 @@ const DetailsScreen = () => {
         
         const doRequest = async () => {
             const qtdNumber = Number(newQuantity.toString().replace(',', '.'));
-
             const payload = {
                 codarm: details.codarm,
                 sequencia: details.sequencia,
@@ -203,13 +190,9 @@ const DetailsScreen = () => {
             setSuccess(result.message || "Quantidade corrigida com sucesso!");
         };
 
-        try {
-            await doRequest();
-        } catch (error) {
-            handleApiError(error, doRequest);
-        } finally {
-            setLoading(false);
-        }
+        try { await doRequest(); } 
+        catch (error) { handleApiError(error, doRequest); } 
+        finally { setLoading(false); }
     };
 
     const renderActionButtons = () => {
@@ -242,22 +225,9 @@ const DetailsScreen = () => {
 
     return (
         <View style={styles.container}>
-            <SuccessModal
-                visible={!!success}
-                title="Sucesso!"
-                message={success}
-                onClose={closeSuccessAndRefresh}
-            />
-            <ErrorModal
-                visible={!!error}
-                errorMessage={error}
-                onClose={closeErrorAndGoBack}
-            />
-            <ErrorModal
-                visible={!!validationError}
-                errorMessage={validationError}
-                onClose={clearValidationError}
-            />
+            <SuccessModal visible={!!success} title="Sucesso!" message={success} onClose={closeSuccessAndRefresh} />
+            <ErrorModal visible={!!error} errorMessage={error} onClose={closeErrorAndGoBack} />
+            <ErrorModal visible={!!validationError} errorMessage={validationError} onClose={clearValidationError} />
 
             <BaixaModal
                 visible={isBaixaModalVisible}
@@ -281,6 +251,7 @@ const DetailsScreen = () => {
                 onConfirm={handleConfirmPicking}
                 itemDetails={details}
                 onValidationError={setValidationError}
+                preloadedLocations={pickingLocations} // Passando dados pré-carregados
             />
             <CorrecaoModal
                 visible={isCorrecaoModalVisible}
@@ -305,9 +276,9 @@ const DetailsScreen = () => {
 
                 <Text style={styles.sectionTitle}>INFORMAÇÕES</Text>
                 <DetailItem label="Derivação" value={details.derivacao || 'N/A'} />
+                <DetailItem label="Nota Fiscal" value={details.numDoc} />
                 <DetailItem label="Validade" value={formatData(details.datval)} />
                 <DetailItem label="Quantidade" value={details.qtdCompleta || '0'} />
-                <DetailItem label="Nota Fiscal" value={details.numDoc} />
 
                 <Text style={styles.sectionTitle}>LOCALIZAÇÃO</Text>
                 <DetailItem label="Armazém" value={details.codarm} />
@@ -322,10 +293,7 @@ const DetailsScreen = () => {
     );
 };
 const getStyles = (colors, insets) => StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
+    container: { flex: 1, backgroundColor: colors.background },
     header: {
         backgroundColor: colors.primary,
         paddingTop: Platform.OS === 'android' ? 40 : 50,
@@ -335,31 +303,18 @@ const getStyles = (colors, insets) => StyleSheet.create({
         alignItems: 'center',
         height: Platform.OS === 'android' ? 90 : 100,
     },
-    backButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        zIndex: 1, 
-        paddingRight: 10,
-    },
-    headerBackText: {
-        color: colors.white,
-        fontSize: 16,
-        marginLeft: 8,
-    },
+    backButton: { flexDirection: 'row', alignItems: 'center', zIndex: 1, paddingRight: 10 },
+    headerBackText: { color: colors.white, fontSize: 16, marginLeft: 8 },
     headerMainTitle: {
         color: colors.white,
         fontSize: 20,
         fontWeight: 'bold',
         position: 'absolute',
-        left: 0,
-        right: 0,
+        left: 0, right: 0,
         textAlign: 'center',
         paddingTop: Platform.OS === 'android' ? 40 : 50,
     },
-    scrollContainer: {
-        padding: SIZES.padding,
-        paddingBottom: SIZES.padding * 2,
-    },
+    scrollContainer: { padding: SIZES.padding, paddingBottom: SIZES.padding * 2 },
     heroCard: {
         backgroundColor: colors.cardBackground,
         padding: SIZES.padding * 1.5,
@@ -369,44 +324,13 @@ const getStyles = (colors, insets) => StyleSheet.create({
         borderWidth: 1,
         borderColor: 'transparent',
     },
-    pickedHeroCard: {
-        backgroundColor: colors.pickingBackground,
-        borderColor: colors.pickingBorder,
-    },
-    heroTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        color: colors.text,
-    },
-    heroSubtitle: {
-        fontSize: 14,
-        color: colors.textLight,
-        marginTop: 5,
-    },
-    sectionTitle: {
-        fontSize: 14,
-        color: colors.textLight,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        textTransform: 'uppercase',
-    },
-    detailItem: {
-        backgroundColor: colors.cardBackground,
-        padding: SIZES.padding,
-        borderRadius: SIZES.radius,
-        marginBottom: 10,
-    },
-    detailItemLabel: {
-        fontSize: 14,
-        color: colors.textLight,
-    },
-    detailItemValue: {
-        fontSize: 18,
-        fontWeight: '500',
-        color: colors.text,
-        marginTop: 4,
-    },
+    pickedHeroCard: { backgroundColor: colors.pickingBackground, borderColor: colors.pickingBorder },
+    heroTitle: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', color: colors.text },
+    heroSubtitle: { fontSize: 14, color: colors.textLight, marginTop: 5 },
+    sectionTitle: { fontSize: 14, color: colors.textLight, fontWeight: 'bold', marginBottom: 10, textTransform: 'uppercase' },
+    detailItem: { backgroundColor: colors.cardBackground, padding: SIZES.padding, borderRadius: SIZES.radius, marginBottom: 10 },
+    detailItemLabel: { fontSize: 14, color: colors.textLight },
+    detailItemValue: { fontSize: 18, fontWeight: '500', color: colors.text, marginTop: 4 },
     actionsFooter: {
         padding: SIZES.padding,
         paddingBottom: SIZES.padding + insets.bottom,
@@ -417,19 +341,8 @@ const getStyles = (colors, insets) => StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: colors.border,
     },
-    actionButton: {
-        flexGrow: 1,
-        flexBasis: '40%',
-        padding: 18,
-        borderRadius: SIZES.radius,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    actionButtonText: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+    actionButton: { flexGrow: 1, flexBasis: '40%', padding: 18, borderRadius: SIZES.radius, alignItems: 'center', justifyContent: 'center' },
+    actionButtonText: { color: colors.white, fontSize: 16, fontWeight: 'bold' },
     btnBaixar: { backgroundColor: colors.success },
     btnTransferir: { backgroundColor: colors.info },
     btnPicking: { backgroundColor: colors.orange },

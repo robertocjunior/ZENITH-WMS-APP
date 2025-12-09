@@ -7,7 +7,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import * as api from '../../api';
 import AnimatedButton from '../common/AnimatedButton';
 
-const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationError }) => {
+const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationError, preloadedLocations }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const [quantity, setQuantity] = useState('');
@@ -23,13 +23,18 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
     useEffect(() => {
         const fetchLocations = async () => {
             if (visible && itemDetails) {
+                // OTIMIZAÇÃO: Usa dados pré-carregados se disponíveis
+                if (preloadedLocations && preloadedLocations.length > 0) {
+                    setDestinationItems(preloadedLocations);
+                    return;
+                }
+
                 setIsLoadingLocations(true);
                 setDestinationItems([]);
                 try {
                     const { codarm, codprod, sequencia } = itemDetails;
                     const locationsMap = await api.fetchPickingLocations(Number(codarm), Number(codprod), Number(sequencia));
                     
-                    // CORREÇÃO: O backend retorna um objeto Map {"seq": {...}}, converte para array
                     const locationsArray = locationsMap ? Object.values(locationsMap) : [];
 
                     const formattedLocations = locationsArray.map((loc) => ({
@@ -48,7 +53,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
         };
 
         fetchLocations();
-    }, [visible, itemDetails]);
+    }, [visible, itemDetails, preloadedLocations]);
 
     useEffect(() => {
         if (visible && itemDetails) {
