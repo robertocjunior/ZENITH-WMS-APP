@@ -103,7 +103,7 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
 
         // CORREÇÃO: Validação de Máximo
         if (numQuantity > maxQuantity) {
-            onValidationError(`Quantidade excede o disponível (${maxQuantity}).`);
+            onValidationError(`Quantidade excede o disponível que é: ${maxQuantity}.`);
             return;
         }
 

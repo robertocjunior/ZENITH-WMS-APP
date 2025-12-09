@@ -62,7 +62,7 @@ const BaixaModal = ({ visible, onClose, onConfirm, itemDetails, onValidationErro
 
         // CORREÇÃO: Bloqueia quantidade maior que o disponível
         if (numQuantity > maxQuantity) {
-            if(onValidationError) onValidationError(`Quantidade excede o disponível (${maxQuantity}).`);
+            if(onValidationError) onValidationError(`Quantidade excede o disponível que é: ${maxQuantity}.`);
             return;
         }
 

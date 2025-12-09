@@ -81,7 +81,7 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
 
         // CORREÇÃO: Validação de Máximo
         if (numQuantity > maxQuantity) {
-            onValidationError(`Quantidade excede o disponível (${maxQuantity}).`);
+            onValidationError(`Quantidade excede o disponível que é: ${maxQuantity}.`);
             return;
         }
 
