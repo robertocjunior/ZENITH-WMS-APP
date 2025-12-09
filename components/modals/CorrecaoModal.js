@@ -5,7 +5,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { SIZES } from '../../constants/theme';
 import AnimatedButton from '../common/AnimatedButton';
 
-const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails }) => {
+// ADICIONADO: onValidationError
+const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails, onValidationError }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const [newQuantity, setNewQuantity] = useState('');
@@ -19,7 +20,12 @@ const CorrecaoModal = ({ visible, onClose, onConfirm, itemDetails }) => {
     const handleConfirm = () => {
         const numQuantity = parseFloat(newQuantity.replace(',', '.'));
         if (isNaN(numQuantity) || numQuantity < 0) {
-            alert('Por favor, insira uma nova quantidade válida.');
+            // CORREÇÃO: Usa modal de erro
+            if(onValidationError) {
+                onValidationError('Por favor, insira uma nova quantidade válida.');
+            } else {
+                alert('Por favor, insira uma nova quantidade válida.');
+            }
             return;
         }
         onConfirm(numQuantity);

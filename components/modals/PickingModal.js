@@ -7,7 +7,6 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import * as api from '../../api';
 import AnimatedButton from '../common/AnimatedButton';
 
-// ALTERADO: Adiciona a nova prop onValidationError
 const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationError }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
@@ -28,18 +27,20 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
                 setDestinationItems([]);
                 try {
                     const { codarm, codprod, sequencia } = itemDetails;
-                    const locations = await api.fetchPickingLocations(Number(codarm), Number(codprod), Number(sequencia));
+                    const locationsMap = await api.fetchPickingLocations(Number(codarm), Number(codprod), Number(sequencia));
                     
-                    const formattedLocations = locations.map(([seqEnd, descrProd]) => ({
-                        label: `${seqEnd} - ${descrProd}`,
-                        value: seqEnd
+                    // CORREÇÃO: O backend retorna um objeto Map {"seq": {...}}, converte para array
+                    const locationsArray = locationsMap ? Object.values(locationsMap) : [];
+
+                    const formattedLocations = locationsArray.map((loc) => ({
+                        label: `${loc.seqEnd} - ${loc.descrProd}`,
+                        value: loc.seqEnd
                     }));
                     setDestinationItems(formattedLocations);
 
                 } catch (error) {
                     console.error("Erro ao buscar locais de picking:", error);
-                    // Aqui um alert ainda faz sentido pois é um erro de carregamento de dados
-                    alert("Não foi possível carregar os destinos de picking.");
+                    if(onValidationError) onValidationError("Não foi possível carregar os destinos de picking.");
                 } finally {
                     setIsLoadingLocations(false);
                 }
@@ -58,7 +59,6 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
 
     const handleConfirm = () => {
         if (!isKgProduct && (String(quantity).includes(',') || String(quantity).includes('.'))) {
-            // ALTERADO: Usa a nova função de erro em vez do alert
             onValidationError('Este produto não aceita casas decimais. Por favor, insira um número inteiro.');
             return;
         }
@@ -137,7 +137,6 @@ const PickingModal = ({ visible, onClose, onConfirm, itemDetails, onValidationEr
     );
 };
 
-// ... (o restante do arquivo getStyles permanece o mesmo)
 const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,

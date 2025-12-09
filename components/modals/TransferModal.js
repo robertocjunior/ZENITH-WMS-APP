@@ -7,7 +7,6 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedButton from '../common/AnimatedButton';
 
-// ALTERADO: Adiciona a nova prop onValidationError
 const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = [], permissions = {}, onValidationError }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
@@ -29,9 +28,10 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
             setMarkedAsPicking(false);
             setWarehouseValue(null);
 
-            const formattedWarehouses = warehouses.map(([cod, desc]) => ({
-                label: desc,
-                value: cod
+            // CORREÇÃO: Mapeia a partir de objetos { codarm, nome }
+            const formattedWarehouses = warehouses.map(wh => ({
+                label: wh.nome,
+                value: wh.codarm
             }));
             setWarehouseItems(formattedWarehouses);
         }
@@ -39,7 +39,6 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
 
     const handleConfirm = () => {
         if (!isKgProduct && (String(quantity).includes(',') || String(quantity).includes('.'))) {
-            // ALTERADO: Usa a nova função de erro em vez do alert
             onValidationError('Este produto não aceita casas decimais. Por favor, insira um número inteiro.');
             return;
         }
@@ -109,9 +108,9 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
                     />
 
                     <Text style={styles.label}>Endereço de Destino:</Text>
-                    <TextInput style={styles.input} value={destinationAddress} onChangeText={setDestinationAddress} keyboardType="numeric" placeholder="Digite o endereço" placeholderTextColor={colors.textLight} />
+                    <TextInput style={styles.input} value={destinationAddress} onChangeText={setDestinationAddress} keyboardType="default" placeholder="Digite o endereço" placeholderTextColor={colors.textLight} />
 
-                    {permissions.criaPick && (
+                    {permissions.CRIAPICK && (
                         <AnimatedButton style={styles.checkboxContainer} onPress={() => setMarkedAsPicking(!isMarkedAsPicking)}>
                             <Ionicons name={isMarkedAsPicking ? 'checkbox' : 'square-outline'} size={24} color={colors.primary} />
                             <Text style={styles.checkboxLabel}>Marcar destino como Picking</Text>
@@ -132,7 +131,6 @@ const TransferModal = ({ visible, onClose, onConfirm, itemDetails, warehouses = 
     );
 };
 
-// ... (o restante do arquivo getStyles permanece o mesmo)
 const getStyles = (colors) => StyleSheet.create({
     overlay: {
         flex: 1,
