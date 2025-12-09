@@ -92,16 +92,13 @@ const DetailsScreen = () => {
         navigation.navigate('Main', { refresh: true, warehouseValue: details.codarm, filter });
     }
 
-    // --- CORREÇÃO: Função handleConfirmBaixa atualizada ---
     const handleConfirmBaixa = async (quantity) => {
         setBaixaModalVisible(false);
         setLoading(true);
 
         const doRequest = async () => {
-            // Garante que a quantidade seja um número
             const qtdNumber = Number(quantity.toString().replace(',', '.'));
 
-            // Monta o payload na estrutura aninhada correta para o Backend
             const payload = { 
                 origem: {
                     codarm: details.codarm,
@@ -123,26 +120,29 @@ const DetailsScreen = () => {
         }
     };
 
+    // --- CORREÇÃO: Função handleConfirmTransfer atualizada ---
     const handleConfirmTransfer = async (transferData) => {
         setTransferModalVisible(false);
         setLoading(true);
         
         const doRequest = async () => {
+            // Converte quantidade
             const qtdNumber = Number(transferData.quantity.toString().replace(',', '.'));
             
+            // Monta o payload conforme solicitado (origem enxuta + destino estruturado)
             const payload = {
-                // Passa apenas os dados necessários da origem
                 origem: {
                     codarm: details.codarm,
                     sequencia: details.sequencia
                 },
                 destino: {
-                    armazemDestino: parseInt(transferData.destinationWarehouse, 10),
-                    enderecoDestino: transferData.destinationAddress,
-                    quantidade: qtdNumber,
-                    criarPick: transferData.isMarkedAsPicking
+                    armazemDestino: parseInt(transferData.destinationWarehouse, 10), // Garante Int
+                    enderecoDestino: transferData.destinationAddress, // String
+                    quantidade: qtdNumber, // Float
+                    criarPick: !!transferData.isMarkedAsPicking // Boolean
                 }
             };
+            
             const result = await api.executeTransaction('transferencia', payload);
             setSuccess(result.message || "Transferência realizada com sucesso!");
         };
