@@ -9,7 +9,6 @@ const DEFAULT_API_URL = 'https://zenith.nicocereais.com.br:3080';
 const SESSION_TOKEN_KEY = 'sessionToken';
 const SNK_SESSION_ID_KEY = 'snkjsessionid';
 
-// Obtém versão do app.json
 const APP_VERSION = Constants.expoConfig?.version || '0.0.0';
 
 let API_BASE_URL = '';
@@ -48,7 +47,6 @@ async function authenticatedFetch(endpoint, body = {}) {
         'X-App-Version': APP_VERSION 
     };
 
-    // CORREÇÃO: O Authorization deve ser enviado SEMPRE
     headers['Authorization'] = `Bearer ${sessionToken}`;
 
     const transactionType = body.type;
@@ -62,11 +60,9 @@ async function authenticatedFetch(endpoint, body = {}) {
             authError.reauthRequired = true;
             throw authError;
         }
-        // Envia o header específico que o backend Go espera
         headers['Snkjsessionid'] = snkjsessionid; 
     }
 
-    // Timeout de 15s
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -120,7 +116,7 @@ export async function login(username, password) {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s para login
+    const timeoutId = setTimeout(() => controller.abort(), 20000); 
 
     try {
         const response = await fetch(`${API_BASE_URL}/apiv1/login`, {
@@ -197,7 +193,6 @@ export async function logout() {
     }
 }
 
-// Rotas
 export const fetchPermissions = () => authenticatedFetch('/permissions');
 
 export const searchItems = (codArm, filtro) => {
@@ -218,7 +213,8 @@ export const fetchItemDetails = (codArm, sequencia) => {
     return authenticatedFetch('/get-item-details', payload);
 }
 
-export const fetchHistory = () => authenticatedFetch('/get-history');
+// CORREÇÃO: fetchHistory agora aceita filtros
+export const fetchHistory = (filters) => authenticatedFetch('/get-history', filters);
 
 export const fetchPickingLocations = (codarm, codprod, sequencia) => {
     const payload = {

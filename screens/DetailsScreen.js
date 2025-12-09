@@ -276,9 +276,9 @@ const DetailsScreen = () => {
 
                 <Text style={styles.sectionTitle}>INFORMAÇÕES</Text>
                 <DetailItem label="Derivação" value={details.derivacao || 'N/A'} />
-                <DetailItem label="Nota Fiscal" value={details.numDoc} />
                 <DetailItem label="Validade" value={formatData(details.datval)} />
                 <DetailItem label="Quantidade" value={details.qtdCompleta || '0'} />
+                <DetailItem label="Nota Fiscal" value={details.numDoc} />
 
                 <Text style={styles.sectionTitle}>LOCALIZAÇÃO</Text>
                 <DetailItem label="Armazém" value={details.codarm} />
