@@ -1,239 +1,112 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+// contexts/AuthContext.js
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as api from '../api';
+import * as api from '../api'; // Importa a api para usar o logout centralizado
 
-const AuthContext = createContext(null);
-
-const MINIMUM_LOADING_TIME = 2000;
-const LAST_WAREHOUSES_KEY = 'lastUsedWarehouses';
-const LAST_USERNAME_KEY = 'lastUsername';
+const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
     const [userSession, setUserSession] = useState(null);
-    const [permissions, setPermissions] = useState(null);
-    const [warehouses, setWarehouses] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [apiError, setApiError] = useState(null);
-    const [authStatus, setAuthStatus] = useState('loggedOut');
-    const [lastWarehouse, setLastWarehouse] = useState(null);
-    const [lastUsername, setLastUsername] = useState('');
+    const [loading, setLoading] = useState(true);
 
-    const [isReAuthVisible, setIsReAuthVisible] = useState(false);
-    const [requestToRetry, setRequestToRetry] = useState(null);
+    // Tempo limite (50 min) para validação no boot do app
+    const SESSION_TIMEOUT_MS = 50 * 60 * 1000;
 
-    const loadLastWarehouseForUser = async (codusu) => {
+    useEffect(() => {
+        loadStorageData();
+    }, []);
+
+    const loadStorageData = async () => {
         try {
-            const storedData = await AsyncStorage.getItem(LAST_WAREHOUSES_KEY);
-            const warehousesMap = storedData ? JSON.parse(storedData) : {};
-            setLastWarehouse(warehousesMap[codusu] || null);
-        } catch (e) { console.error("Erro storage armazém:", e); }
-    };
-    
-    const loadLastUsername = async () => {
-        try {
-            const username = await AsyncStorage.getItem(LAST_USERNAME_KEY);
-            if (username) setLastUsername(username);
-        } catch (e) { console.error("Erro storage user:", e); }
-    };
+            // As chaves devem corresponder às usadas no api/index.js
+            const storedUser = await AsyncStorage.getItem('userSession');
+            const storedToken = await AsyncStorage.getItem('sessionToken');
+            const lastActivity = await AsyncStorage.getItem('last_activity_timestamp');
 
-    // Função auxiliar para converter os dados de permissão em lista de objetos
-    const parseWarehousesFromPermissions = (perms) => {
-        if (!perms || !perms.LISTA_CODIGOS || !perms.LISTA_NOMES) return [];
+            if (storedUser && storedToken) {
+                // VERIFICAÇÃO DE INATIVIDADE AO ABRIR O APP
+                if (lastActivity) {
+                    const now = Date.now();
+                    const lastTime = parseInt(lastActivity, 10);
 
-        try {
-            // Ex: "1, 2" -> ["1", "2"]
-            const codigos = perms.LISTA_CODIGOS.split(',').map(c => c.trim());
-            
-            // Ex: "1 - ATACADO, 2 - PRODUTO ACABADO" -> ["1 - ATACADO", "2 - PRODUTO ACABADO"]
-            // OBS: O Backend retorna essa lista separada por vírgula na mesma ordem dos códigos
-            const nomesCompletos = perms.LISTA_NOMES.split(',').map(n => n.trim());
+                    // Se passou 50 minutos desde a última atividade
+                    if (now - lastTime > SESSION_TIMEOUT_MS) {
+                        console.log("Sessão expirada em background. Realizando logout silencioso.");
+                        await signOut(); 
+                        return;
+                    }
+                }
 
-            const whList = codigos.map((codigo, index) => {
-                // MODIFICADO: Agora usa diretamente o nome completo (ex: "1 - ATACADO")
-                // Se não houver nome correspondente, usa um fallback
-                let nome = nomesCompletos[index] || `Armazém ${codigo}`;
-                
-                return {
-                    codarm: parseInt(codigo, 10),
-                    nome: nome 
-                };
-            });
-
-            return whList;
-        } catch (e) {
-            console.error("Erro ao processar armazéns:", e);
-            return [];
+                setUserSession(JSON.parse(storedUser));
+            }
+        } catch (error) {
+            console.error("Falha ao carregar dados do storage", error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    useEffect(() => {
-        const checkLogin = async () => {
-            try {
-                await loadLastUsername();
-                const sessionData = await AsyncStorage.getItem('userSession');
-                
-                if (sessionData) {
-                    const parsedData = JSON.parse(sessionData);
-                    setUserSession(parsedData.userSession);
-                    setPermissions(parsedData.permissions);
-                    setWarehouses(parsedData.warehouses || []);
-                    if (parsedData.userSession?.codusu) {
-                        await loadLastWarehouseForUser(parsedData.userSession.codusu);
-                    }
-                    setAuthStatus('loggedIn');
-                } else {
-                    setAuthStatus('loggedOut');
-                }
-            } catch (e) {
-                console.error("Falha ao restaurar sessão:", e);
-                setAuthStatus('loggedOut');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        api.initializeApiUrl().then(checkLogin);
-    }, []);
-
-    useEffect(() => {
-        const fetchAppData = async () => {
-            if (authStatus === 'authenticating' && userSession) {
-                try {
-                    const dataPromise = (async () => {
-                        // 1. Busca Permissões
-                        const perms = await api.fetchPermissions();
-                        
-                        // 2. Processa Armazéns a partir das permissões
-                        const whs = parseWarehousesFromPermissions(perms);
-
-                        const sessionToSave = { userSession, permissions: perms, warehouses: whs };
-                        await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
-                        
-                        return { perms, whs };
-                    })();
-
-                    const minTimePromise = new Promise(resolve => setTimeout(resolve, MINIMUM_LOADING_TIME));
-                    const [data] = await Promise.all([dataPromise, minTimePromise]);
-                    
-                    setPermissions(data.perms);
-                    setWarehouses(data.whs);
-                    await loadLastWarehouseForUser(userSession.codusu);
-                    setAuthStatus('loggedIn');
-                } catch (error) {
-                    handleApiError(error);
-                }
-            }
-        };
-        fetchAppData();
-    }, [authStatus, userSession]);
-
-    const login = async (username, password) => {
-        setApiError(null);
+    const signIn = async (userData, token) => {
         try {
-            const response = await api.login(username, password);
-            await AsyncStorage.setItem(LAST_USERNAME_KEY, username);
-            setLastUsername(username);
-            setUserSession(response);
-            setAuthStatus('authenticating');
+            // Salva dados da sessão
+            await AsyncStorage.setItem('userSession', JSON.stringify(userData));
+            
+            // O token já é salvo pelo api.login, mas garantimos o timestamp inicial aqui
+            await AsyncStorage.setItem('last_activity_timestamp', Date.now().toString());
+
+            setUserSession(userData);
         } catch (error) {
-            handleApiError(error);
+            console.error("Erro ao salvar login", error);
             throw error;
         }
     };
 
-    const logout = async () => {
-        try { await api.logout(); } 
-        catch (e) { console.error("Logout error:", e); } 
-        finally {
+    const signOut = async () => {
+        try {
+            // Chama o logout da API para limpar todas as chaves (token, timestamp, etc)
+            await api.logout();
+            setUserSession(null); // Isso disparará a navegação para a tela de Login
+        } catch (error) {
+            console.error("Erro ao fazer logout", error);
             setUserSession(null);
-            setPermissions(null);
-            setWarehouses([]);
-            setLastWarehouse(null);
-            setAuthStatus('loggedOut');
         }
     };
 
-    const saveLastWarehouse = async (codusu, warehouseCode) => {
-        try {
-            const storedData = await AsyncStorage.getItem(LAST_WAREHOUSES_KEY);
-            const warehousesMap = storedData ? JSON.parse(storedData) : {};
-            warehousesMap[codusu] = warehouseCode;
-            await AsyncStorage.setItem(LAST_WAREHOUSES_KEY, JSON.stringify(warehousesMap));
-        } catch (e) { console.error("Erro ao salvar armazém:", e); }
-    };
+    // Função centralizada de erro para usar nas telas
+    const handleApiError = (error) => {
+        console.error("API Error Handler:", error);
 
-    const handleApiError = (error, retryFunc = null) => {
-        if (error.statusCode === 426) {
-            setApiError(error.message || 'Aplicativo desatualizado. Atualize para continuar.');
-            if (authStatus !== 'loggedOut') logout();
+        // 1. LÓGICA DE SESSÃO EXPIRADA (SEM POPUP)
+        // Verifica se é timeout local, flag de reauthRequired ou erro 401 do servidor
+        if (
+            error.code === 'SESSION_EXPIRED_LOCAL' || 
+            error.isLocalTimeout || 
+            error.reauthRequired ||
+            (error.response && error.response.status === 401)
+        ) {
+            // AÇÃO: Logout direto sem perguntar ou avisar
+            signOut();
             return;
         }
 
-        if (error.reauthRequired && retryFunc) {
-            setRequestToRetry(() => () => retryFunc());
-            setIsReAuthVisible(true);
-        } else if (error.reauthRequired || error.statusCode === 401) {
-             setApiError("Sessão expirada.");
-             logout();
-        } else {
-            setApiError(error.message || 'Erro inesperado.');
-        }
+        // 2. Outros erros (mantém o alerta para erros de negócio ou conexão)
+        const msg = error.response?.data?.message || error.message || "Ocorreu um erro na comunicação.";
+        Alert.alert("Erro", msg);
     };
 
-    const handleReAuth = async (password) => {
-        const currentUsername = userSession?.username || lastUsername;
-        if (!currentUsername) return false;
-        
-        setApiError(null);
-
-        try {
-            const newSessionData = await api.login(currentUsername, password);
-            const sessionToSave = { userSession: newSessionData, permissions, warehouses };
-            await AsyncStorage.setItem('userSession', JSON.stringify(sessionToSave));
-            setUserSession(newSessionData);
-
-            setIsReAuthVisible(false);
-            
-            if (requestToRetry) {
-                const retry = requestToRetry;
-                setRequestToRetry(null);
-                await retry();
-            }
-            return true;
-        } catch (error) {
-            handleApiError(error); 
-            if(error.statusCode !== 426) {
-                 setApiError('Senha incorreta.');
-            }
-            return false;
-        }
-    };
-
-    const cancelReAuth = () => {
-        setIsReAuthVisible(false);
-        setRequestToRetry(null);
-        logout();
-    };
-
-    const value = {
-        userSession,
-        permissions,
-        warehouses,
-        isLoading,
-        authStatus,
-        apiError,
-        clearApiError: () => setApiError(null),
-        login,
-        logout,
-        handleApiError,
-        lastWarehouse,
-        saveLastWarehouse,
-        lastUsername,
-        isReAuthVisible,
-        handleReAuth,
-        cancelReAuth,
-    };
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={{
+            userSession,
+            loading,
+            signIn,
+            signOut,
+            handleApiError, 
+            isAuthenticated: !!userSession
+        }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
 export const useAuth = () => useContext(AuthContext);

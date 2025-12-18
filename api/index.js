@@ -8,6 +8,10 @@ const DEFAULT_API_URL = 'https://zenith.nicocereais.com.br:3080';
 
 const SESSION_TOKEN_KEY = 'sessionToken';
 const SNK_SESSION_ID_KEY = 'snkjsessionid';
+const LAST_ACTIVITY_KEY = 'last_activity_timestamp'; // Novo: Chave para o timestamp
+
+// TEMPO LIMITE DA SESSÃO: 50 Minutos (em milissegundos)
+const SESSION_TIMEOUT_MS = 50 * 60 * 1000;
 
 // Obtém versão do app.json
 const APP_VERSION = Constants.expoConfig?.version || '0.0.0';
@@ -35,7 +39,40 @@ export const setApiUrl = async (url) => {
     }
 };
 
+// Helper para verificar inatividade
+const checkSessionTimeout = async () => {
+    try {
+        const lastActivity = await AsyncStorage.getItem(LAST_ACTIVITY_KEY);
+        if (lastActivity) {
+            const now = Date.now();
+            const lastTime = parseInt(lastActivity, 10);
+            
+            // Se a diferença for maior que 50 minutos
+            if (now - lastTime > SESSION_TIMEOUT_MS) {
+                const error = new Error('Sessão expirada por inatividade (50min).');
+                error.code = 'SESSION_EXPIRED_LOCAL';
+                error.reauthRequired = true; // Sinaliza logout forçado
+                throw error;
+            }
+        }
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Helper para atualizar o timestamp (somente após sucesso)
+const updateActivityTimestamp = async () => {
+    try {
+        await AsyncStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+    } catch (e) {
+        console.warn("Falha ao atualizar timestamp de atividade", e);
+    }
+};
+
 async function authenticatedFetch(endpoint, body = {}) {
+    // 1. Verifica se a sessão expirou localmente ANTES de tentar conectar
+    await checkSessionTimeout();
+
     const sessionToken = await AsyncStorage.getItem(SESSION_TOKEN_KEY);
     if (!sessionToken) {
         const authError = new Error('Nenhum token de sessão encontrado.');
@@ -66,7 +103,7 @@ async function authenticatedFetch(endpoint, body = {}) {
         headers['Snkjsessionid'] = snkjsessionid; 
     }
 
-    // Timeout de 15s
+    // Timeout de 15s para a requisição de rede
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -90,6 +127,9 @@ async function authenticatedFetch(endpoint, body = {}) {
             error.statusCode = response.status;
             throw error;
         }
+
+        // 2. Se chegou aqui, a resposta foi SUCESSO. Atualiza o contador de inatividade.
+        await updateActivityTimestamp();
 
         return data;
     } catch (error) {
@@ -154,6 +194,8 @@ export async function login(username, password) {
 
         if (data.sessionToken) {
             await AsyncStorage.setItem(SESSION_TOKEN_KEY, data.sessionToken);
+            // 3. Login com sucesso: Inicializa o contador de inatividade
+            await updateActivityTimestamp();
         } else {
             throw new Error('Token de sessão não recebido.');
         }
@@ -180,8 +222,13 @@ export async function logout() {
         // 1. Recupera o token ANTES de limpar o storage para poder enviar ao backend
         const sessionToken = await AsyncStorage.getItem(SESSION_TOKEN_KEY);
 
-        // 2. Limpeza Local (Prioridade)
-        await AsyncStorage.multiRemove([SESSION_TOKEN_KEY, SNK_SESSION_ID_KEY, 'userSession']);
+        // 2. Limpeza Local (Prioridade) - Inclui o LAST_ACTIVITY_KEY
+        await AsyncStorage.multiRemove([
+            SESSION_TOKEN_KEY, 
+            SNK_SESSION_ID_KEY, 
+            'userSession', 
+            LAST_ACTIVITY_KEY
+        ]);
         console.log('Dados locais limpos.');
 
         // 3. Notifica Backend (Best effort)
@@ -195,7 +242,7 @@ export async function logout() {
                      headers: { 
                         'Content-Type': 'application/json', 
                         'X-App-Version': APP_VERSION,
-                        'Authorization': `Bearer ${sessionToken}` // CORREÇÃO: Envia o token para o backend invalidar
+                        'Authorization': `Bearer ${sessionToken}`
                      },
                      body: JSON.stringify({}),
                      signal: controller.signal
