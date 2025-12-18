@@ -9,12 +9,11 @@ const HistoryCard = ({ item }) => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
 
-    // ADAPTAÇÃO: Desestruturação do Objeto JSON (Backend Novo)
-    // Mapeamos para as variáveis que o seu layout antigo já usava
+    // Mapeamento dos campos vindos do Backend (JSON)
     const {
         tipo,
         hora,
-        codArm: codarm,      // Renomeando para bater com seu código original
+        codArm: codarm,
         seqEnd: seqend,
         armDes: armdes,
         endDes: enddes,
@@ -22,8 +21,9 @@ const HistoryCard = ({ item }) => {
         descrProd: descrprod,
         marca,
         derivacao,
-        quantAnt,
-        qtdAtual,
+        qtdProd,     // Campo para MOV (Transferência, Picking, Baixa)
+        quantAnt,    // Campo exclusivo de CORRECAO
+        qtdAtual,    // Campo exclusivo de CORRECAO
         idOperacao
     } = item;
 
@@ -34,6 +34,7 @@ const HistoryCard = ({ item }) => {
     if (derivacao) productDisplay += ` - ${derivacao}`;
 
     const renderCardBody = () => {
+        // CASO 1: CORREÇÃO (Usa quantAnt e qtdAtual)
         if (isCorrection) {
             return (
                 <>
@@ -46,7 +47,7 @@ const HistoryCard = ({ item }) => {
                             <Text style={styles.quantityLabel}>Qtd. Anterior</Text>
                             <Text style={[styles.quantityValue, styles.quantityBefore]}>{quantAnt}</Text>
                         </View>
-                        <Ionicons name="arrow-forward" size={24} color={isCorrection ? colors.correctionHeader : colors.primary} />
+                        <Ionicons name="arrow-forward" size={24} color={colors.correctionHeader || '#ef6c00'} />
                         <View style={styles.quantityBox}>
                             <Text style={styles.quantityLabel}>Qtd. Corrigida</Text>
                             <Text style={[styles.quantityValue, styles.quantityAfter]}>{qtdAtual}</Text>
@@ -56,35 +57,42 @@ const HistoryCard = ({ item }) => {
             );
         }
 
-        // Verifica transferência (se tem destino preenchido)
+        // CASO 2: TRANSFERÊNCIA (Tem origem e destino) - Usa qtdProd
         if (armdes && enddes) { 
             return (
-                <View style={styles.movementBox}>
-                    <View style={styles.locationOriginDest}>
-                        <Text style={styles.locationLabel}>Origem</Text>
-                        <Text style={styles.locationText}>{codarm} → {seqend}</Text>
+                <View style={styles.movementContainer}>
+                    <View style={styles.movementBox}>
+                        <View style={styles.locationOriginDest}>
+                            <Text style={styles.locationLabel}>Origem</Text>
+                            <Text style={styles.locationText}>{codarm} → {seqend}</Text>
+                        </View>
+                        <Ionicons name="arrow-forward" size={24} color={colors.primary} />
+                        <View style={styles.locationOriginDest}>
+                            <Text style={styles.locationLabel}>Destino</Text>
+                            <Text style={styles.locationText}>{armdes} → {enddes}</Text>
+                        </View>
                     </View>
-                    <Ionicons name="arrow-forward" size={24} color={colors.primary} />
-                    <View style={styles.locationOriginDest}>
-                        <Text style={styles.locationLabel}>Destino</Text>
-                        <Text style={styles.locationText}>{armdes} → {enddes}</Text>
+                    <View style={styles.singleQuantityBox}>
+                         <Text style={styles.quantityLabel}>Quantidade Movida</Text>
+                         <Text style={styles.quantityValue}>{qtdProd}</Text>
                     </View>
                 </View>
             );
-        } else { // Baixa ou Picking simples
-            return (
-                <View style={styles.locationBox}>
-                    <Text style={styles.locationLabel}>
-                        {tipo === 'PICKING' ? 'Origem do Picking' : 'Local da Baixa'}
-                    </Text>
-                    <Text style={styles.locationText}>{codarm} → {seqend}</Text>
-                    {/* Se for baixa/picking mostra a quantidade movida tbm */}
-                    <Text style={[styles.quantityValue, {fontSize: 16, marginTop: 5}]}>
-                        Qtd: {qtdAtual}
-                    </Text>
-                </View>
-            );
-        }
+        } 
+        
+        // CASO 3: BAIXA ou PICKING (Apenas origem) - Usa qtdProd
+        return (
+            <View style={styles.locationBox}>
+                <Text style={styles.locationLabel}>
+                    {tipo === 'PICKING' ? 'Origem do Picking' : 'Local da Baixa'}
+                </Text>
+                <Text style={styles.locationText}>{codarm} → {seqend}</Text>
+                
+                <Text style={[styles.quantityValue, {fontSize: 16, marginTop: 5}]}>
+                    Qtd: {qtdProd}
+                </Text>
+            </View>
+        );
     };
 
     return (
@@ -114,7 +122,7 @@ const getStyles = (colors) => StyleSheet.create({
         borderWidth: 1,
     },
     operationCard: {
-        backgroundColor: colors.historyBackground || colors.cardBackground, // Fallback se historyBackground não existir no tema novo
+        backgroundColor: colors.historyBackground || colors.cardBackground, 
         borderColor: colors.historyBorder || colors.border,
     },
     correctionCard: {
@@ -183,6 +191,9 @@ const getStyles = (colors) => StyleSheet.create({
         fontWeight: '500',
         color: colors.text,
     },
+    movementContainer: {
+        gap: 10
+    },
     movementBox: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -198,6 +209,15 @@ const getStyles = (colors) => StyleSheet.create({
         alignItems: 'center',
         flex: 1,
     },
+    singleQuantityBox: {
+        backgroundColor: colors.background,
+        padding: 8,
+        borderRadius: SIZES.radius,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderStyle: 'dashed'
+    },
     quantityLabel: {
         fontSize: 12,
         color: colors.textLight,
@@ -206,6 +226,7 @@ const getStyles = (colors) => StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginTop: 2,
+        color: colors.text
     },
     quantityBefore: {
         color: colors.error || '#d32f2f',

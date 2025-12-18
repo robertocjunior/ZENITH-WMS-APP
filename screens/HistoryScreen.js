@@ -1,6 +1,6 @@
 // screens/HistoryScreen.js
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, Platform, TextInput, TouchableOpacity, Keyboard } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Platform, TextInput, TouchableOpacity, Keyboard } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as api from '../api';
@@ -24,7 +24,7 @@ const HistoryScreen = () => {
     const { colors } = useTheme();
     const styles = getStyles(colors);
     const navigation = useNavigation();
-    const { handleApiError, userSession } = useAuth(); // Precisa do userSession para o ID
+    const { handleApiError, userSession } = useAuth();
 
     const [loading, setLoading] = useState(false);
     const [historyItems, setHistoryItems] = useState([]);
@@ -40,22 +40,20 @@ const HistoryScreen = () => {
                 await SystemUI.setBackgroundColorAsync(colors.background);
             };
             setSystemUIColor();
-            // Carrega inicialmente
             fetchHistoryData();
-        }, [colors]) // Removeu fetchHistoryData das deps para evitar loop, chama manual
+        }, [colors]) 
     );
 
     const fetchHistoryData = async () => {
         setLoading(true);
         Keyboard.dismiss();
         try {
-            // Lógica do Payload
             const payload = {
                 dtIni: dtIni,
                 dtFim: dtFim
             };
 
-            // Se "Todos" estiver marcado, manda 0. Se não, manda o ID do user logado (ou omite, dependo do backend, mas aqui mandamos explícito)
+            // Se "Todos" estiver marcado, manda 0. Se não, manda o ID do user logado
             if (showAllUsers) {
                 payload.codUsu = 0;
             } else if (userSession?.codusu) {
@@ -66,13 +64,11 @@ const HistoryScreen = () => {
             setHistoryItems(data || []);
         } catch (error) {
             handleApiError(error);
-            // Alert.alert("Erro", "Não foi possível carregar o histórico."); // handleApiError já deve tratar
         } finally {
             setLoading(false);
         }
     };
 
-    // Máscara simples de data DD/MM/YYYY
     const handleDateChange = (text, setFunction) => {
         let formatted = text.replace(/\D/g, '');
         if (formatted.length > 2) formatted = `${formatted.slice(0, 2)}/${formatted.slice(2)}`;
@@ -147,7 +143,7 @@ const HistoryScreen = () => {
             ) : (
                 <FlatList
                     data={historyItems}
-                    keyExtractor={(item, index) => `${item.idOperacao || index}-${index}`} // Ajustado para ser mais robusto
+                    keyExtractor={(item, index) => `${item.idOperacao}-${item.seqIte || index}`} 
                     renderItem={({ item }) => <HistoryCard item={item} />}
                     contentContainerStyle={styles.list}
                     ListEmptyComponent={() => (
@@ -198,7 +194,6 @@ const getStyles = (colors) => StyleSheet.create({
         textAlign: 'center',
         paddingTop: Platform.OS === 'android' ? 40 : 50,
     },
-    // Estilos dos Filtros
     filterContainer: {
         backgroundColor: colors.cardBackground,
         padding: SIZES.padding,
@@ -257,7 +252,6 @@ const getStyles = (colors) => StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 14,
     },
-    // Lista e Empty
     list: { 
         padding: SIZES.padding,
     },
